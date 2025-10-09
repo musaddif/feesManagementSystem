@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import "../style/department.css";
+import "./style/department.css";
 const Department = () => {
   const location = useLocation();
   const selectedType = location.state?.selectedType || "None";

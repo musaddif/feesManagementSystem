@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
-import "../style/department.css";
-import "../style/feeSubmissionForm.css";
+import "./style/department.css";
+import "./style/feeSubmissionForm.css";
 import { useState } from "react";
 
 const FeeSubmissionForm = () => {
