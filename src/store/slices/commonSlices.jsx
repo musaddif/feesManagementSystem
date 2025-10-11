@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   department: [],
+  fees: [],
 };
 export const commonSlice = createSlice({
   name: "common",
@@ -10,8 +11,12 @@ export const commonSlice = createSlice({
       ...state,
       department: action.payload,
     }),
+    feeSlice: (state, action) => ({
+      ...state,
+      fees: action.payload,
+    }),
   },
 });
 
-export const { department } = commonSlice.actions;
+export const { department, feeSlice } = commonSlice.actions;
 export default commonSlice.reducer;

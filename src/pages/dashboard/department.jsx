@@ -18,7 +18,8 @@ const Department = () => {
   // console.log("allDepartment = ", allDepartment);
 
   const handleNavigation = (type) => {
-    // Navigate to the fee submission form with the selected department type
+    // console.log("type = ", type);
+
     navigate("/feeSubmission", { state: { selectedDepartment: type } });
   };
 
