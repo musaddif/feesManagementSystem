@@ -6,8 +6,8 @@
 }
 
 .checkBoxWrapper {
-  @apply justify-center flex flex-wrap items-center gap-6  flex-row w-full;
+  @apply flex flex-wrap justify-center items-center gap-6  flex-row w-2/5;
 }
 .label {
-  @apply ml-1;
+  @apply ml-1 text-lg;
 }

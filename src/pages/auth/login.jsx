@@ -1,8 +1,10 @@
 import { useState } from "react";
-import "./login.css";
-import { supabase } from "../supabaseClient";
+import "../style/login.css";
+import "../../constant/applicationStyle.css";
+import { supabase } from "../../supabaseClient";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import Button from "../../component/button/button";
 
 const Login = () => {
   const [username, setUserName] = useState("");
@@ -86,10 +88,10 @@ const Login = () => {
 
   return (
     <div className="backgroundStyle">
-      <div className="container">
+      <div className="loginContainer">
         <h1 className="textStyle">Welcome Back!</h1>
         <div>
-          <label className="labelStyle">email</label>
+          <label className="labelStyle">Email</label>
           <input
             type="email"
             className="inputStyle"
@@ -102,7 +104,7 @@ const Login = () => {
 
             <input
               type={showPassword ? "text" : "password"}
-              className="inputStyle w-full pr-10"
+              className="inputStyle pr-10"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
@@ -111,16 +113,19 @@ const Login = () => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-12 text-gray-500"
+              className="absolute right-3 top-12 text-gray-500 py-0 px-0 bg-[transparent] "
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
         </div>
 
-        <button className="loginbtn" onClick={handleLogin} disabled={loading}>
+        {/* <button className="loginbtn" onClick={handleLogin} disabled={loading}>
           {loading ? "Logging in..." : "Login"}
-        </button>
+        </button> */}
+        <Button className="" onClick={handleLogin} disabled={loading}>
+          {loading ? "Logging in..." : "Login"}
+        </Button>
 
         {/* <button onClick={handleSignUp}>signUp</button> */}
 

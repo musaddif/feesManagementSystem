@@ -1,19 +1,22 @@
 import { useLocation } from "react-router-dom";
-import "./style/department.css";
-import "./style/feeSubmissionForm.css";
+import "../style/department.css";
+import "../style/feeSubmission.css";
+import "../../constant/applicationStyle.css";
 import { useState } from "react";
+import { feesTypes } from "../../constant/lists";
 
-const FeeSubmissionForm = () => {
+const FeeSubmission = () => {
   const [rollNo, setRollNo] = useState("");
 
   const location = useLocation();
   const selectedDepartment = location.state?.selectedDepartment;
-  //   console.log("selectedDepartment", selectedDepartment);
 
   return (
-    <div className="containerBackground">
+    <div className="backgroundStyle">
       <div className="feeFormContainer">
         <h1 className="text-2xl font-bold">Fee Submission Form</h1>
+
+        {/* Student Roll No input */}
         <div className="flex flex-row gap-6 w-full items-center justify-center  ">
           <label className="">Student Roll No:</label>
           <input
@@ -24,29 +27,20 @@ const FeeSubmissionForm = () => {
             className="rollnoInput"
           />
         </div>
-        <div className="checkBoxWrapper">
-          <div className="checkBox">
-            <input type="checkbox" />
-            <label className="label">Admission Fee</label>
-          </div>
-          <div className="checkBox">
-            <input type="checkbox" />
-            <label className="label">Registeration Fee</label>
-          </div>
-          <div className="checkBox">
-            <input type="checkbox" />
-            <label className="label">Exam Fee</label>
-          </div>
-          <div className="checkBox">
-            <input type="checkbox" />
-            <label className="label">College Fee</label>
-          </div>
-          <div className="checkBox">
-            <input type="checkbox" />
-            <label className="label">CRF Fee</label>
-          </div>
+
+        {/* Fee Types checkboxes */}
+        <div className="flex flex-wrap gap-4 justify-center items-center w-full">
+          {feesTypes.map((feeType, index) => (
+            <div className="flex  flex-wrap gap-x-1 gap-y-3">
+              <input type="checkbox" id={feeType.toLowerCase()} />
+              <label htmlFor={feeType.toLowerCase()} className="label">
+                {feeType}
+              </label>
+            </div>
+          ))}
         </div>
 
+        {/* Total Fee Display */}
         <div className="flex flex-row gap-6 w-full items-center justify-center  ">
           <label className="">Total Fee:</label>
           <input
@@ -60,4 +54,4 @@ const FeeSubmissionForm = () => {
     </div>
   );
 };
-export default FeeSubmissionForm;
+export default FeeSubmission;
