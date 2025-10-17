@@ -13,7 +13,7 @@ const Dashboard = () => {
       <div className="modal">
         <Button onClick={() => handleNavigation("BS")}>BS</Button>
         <Button onClick={() => handleNavigation("Inter")}>Inter</Button>
-        <Button onClick={() => handleNavigation("Art")}>Art</Button>
+        {/* <Button onClick={() => handleNavigation("Art")}>Art</Button> */}
       </div>
     </div>
   );

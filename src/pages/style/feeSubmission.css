@@ -1,5 +1,5 @@
-.feeFormContainer {
-  @apply flex flex-col gap-8 w-2/5 overflow-auto my-4 bg-white p-8 rounded-lg shadow-md justify-center items-center;
+.FormContainer {
+  @apply flex flex-col gap-8 w-3/5 overflow-auto my-4 bg-white p-8 rounded-lg shadow-md justify-center items-center;
 }
 .rollnoInput {
   @apply border rounded-md p-2 w-2/5 h-1/6 text-center flex-wrap;

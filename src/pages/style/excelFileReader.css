@@ -1,0 +1,25 @@
+.excelInput {
+  @apply w-full px-10 h-2/4  bg-gradient-to-br
+   from-gray-800 via-gray-900 to-black 
+   text-white flex rounded-lg justify-center
+    items-center m-[40%];
+}
+.tableStyle {
+  @apply w-full
+   h-4/5
+  
+    bg-white;
+}
+.tableRow {
+  @apply border-b border-gray-300 hover:bg-gray-100 transition-colors;
+}
+.tableCell {
+  @apply px-6 py-3 text-gray-700;
+}
+.tableData {
+  @apply text-black
+  
+  p-4
+  text-center
+  gap-24;
+}

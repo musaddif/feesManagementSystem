@@ -5,7 +5,6 @@ import Button from "../../component/button/button";
 import { departmentList } from "../../constant/lists";
 import { intermediateList } from "../../constant/lists";
 import { useEffect, useState } from "react";
-import { supabase } from "../../supabaseClient";
 import { useDispatch, useSelector } from "react-redux";
 import { allDepartments } from "../../store/Thunk/commonThunk";
 
@@ -19,7 +18,8 @@ const Department = () => {
 
   const handleNavigation = (type) => {
     // Navigate to the fee submission form with the selected department type
-    navigate("/feeSubmission", { state: { selectedDepartment: type } });
+    localStorage.setItem("selectedDepartment", JSON.stringify(type));
+    navigate("/feeSubmission");
   };
 
   useEffect(() => {
@@ -31,7 +31,6 @@ const Department = () => {
       {selectedType == "BS" ? (
         <div className="container">
           <h1 className="text-2xl font-bold">Department</h1>
-          {/* BS  Department Buttons */}
           <div className="flex flex-wrap flex-row gap-4 justify-center">
             {/* {departmentList.map((dept, index) => ( */}
             {allDepartment?.map((dept, index) => (

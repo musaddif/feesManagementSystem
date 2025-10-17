@@ -12,9 +12,12 @@ const Login = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] = useState("");
 
   const navigate = useNavigate();
+  console.log("role", role);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -32,6 +35,8 @@ const Login = () => {
       }
 
       setMessage("Login successful!");
+      // console.log("admin", data);
+
       navigate("/dashboard");
 
       // Optional: Fetch user profile from your custom `user` table
@@ -58,6 +63,11 @@ const Login = () => {
   //     const { data, error } = await supabase.auth.signUp({
   //       email,
   //       password,
+  //       options: {
+  //         data: {
+  //           role: role ? role : "",
+  //         },
+  //       },
   //     });
 
   //     if (error) {
@@ -118,11 +128,19 @@ const Login = () => {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
+
+          {/* <label>
+            <input
+              type="checkbox"
+              className="mr-2 mb-4"
+              value={role}
+              name="role"
+              onChange={(e) => setRole(e.target.checked ? "Admin" : "")}
+            />
+            login as Admin
+          </label> */}
         </div>
 
-        {/* <button className="loginbtn" onClick={handleLogin} disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button> */}
         <Button className="" onClick={handleLogin} disabled={loading}>
           {loading ? "Logging in..." : "Login"}
         </Button>
