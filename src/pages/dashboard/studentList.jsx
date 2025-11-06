@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllStudents } from "../../store/Thunk/commonThunk";
+import {
+  getAllStudents,
+  getAllInterStudents,
+} from "../../store/Thunk/commonThunk";
 import SideBar from "../../component/sideBar";
 import "../../constant/applicationStyle.css";
 import "../style/excelFileReader.css";
 import { FaSearch } from "react-icons/fa";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import Button from "../../component/button/button";
+
 const StudentList = () => {
   const [students, setStudents] = useState([]);
   const [originalData, setOriginalData] = useState([]);
@@ -13,13 +20,19 @@ const StudentList = () => {
   const dispatch = useDispatch();
 
   const student = useSelector((state) => state.common.getAllStudent);
+  const interStudent = useSelector((state) => state.common.getAllInterStudent);
+
   useEffect(() => {
     const storeDeparment = localStorage.getItem("selectedDepartment");
     const selectedDepartment = storeDeparment
       ? JSON.parse(storeDeparment)
       : null;
-    //getting list by department id
-    dispatch(getAllStudents({ id: selectedDepartment?.department_id }));
+
+    if (selectedDepartment?.study_level == "BS") {
+      dispatch(getAllStudents({ deprt: selectedDepartment?.department_name }));
+    } else {
+      dispatch(getAllInterStudents({ deprt: selectedDepartment?.class_name }));
+    }
   }, []);
 
   useEffect(() => {
@@ -33,20 +46,20 @@ const StudentList = () => {
       if (!trim) return setStudents(originalData);
 
       const result = originalData.filter((data) => {
-        const first_name = (data.first_name || "").toLowerCase();
-        const last_name = (data.last_name || "").toLowerCase();
+        const name = (data.name || "").toLowerCase();
+        const father_name = (data.father_name || "").toLowerCase();
         const student_rollno = (data.student_rollno || "").toLowerCase();
-        const semester = (data.semester || "").toLowerCase();
+        const batch = (data.batch || "").toLowerCase();
         const created_at = (data.created_at || "").toLowerCase();
         const department_name = (
           data.department?.department_name || ""
         ).toLowerCase();
 
         return (
-          first_name.includes(trim) ||
-          last_name.includes(trim) ||
+          name.includes(trim) ||
+          father_name.includes(trim) ||
           student_rollno.includes(trim) ||
-          semester.includes(trim) ||
+          batch.includes(trim) ||
           created_at.includes(trim) ||
           department_name.includes(trim)
         );
@@ -58,12 +71,51 @@ const StudentList = () => {
   );
 
   const location = useLocation();
-  // const selectedDepartment = location.state?.selectedDepartment;
-  // console.log("dataaa", selectedDepartment);
+  const navigate = useNavigate();
+  const loginSession = useSelector((state) => state.auth.session);
 
   useEffect(() => {
     searchHandler(isSearch);
   }, [isSearch]);
+
+  const download = (student) => {
+    const formattedData = student.map((student) => ({
+      Name: student.name,
+      "Father Name": student.father_name,
+      Batch: student.batch,
+      RollNo: student.rollno,
+      "Registration No":
+        student?.registration_number || student?.inter_student_registration,
+      Department:
+        student.department?.department_name || student?.inter?.class_name,
+      "Created At": new Date(student.created_at).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+      "Fee Submission":
+        student.feeSubmission?.[0]?.registration_number ||
+        student.feeSubmission?.[0]?.inter_student_registration
+          ? "Submitted"
+          : "Not Submitted",
+    }));
+
+    const departmentName =
+      student[0]?.department?.department_name || student[0]?.inter?.class_name;
+    const batch = student[0]?.batch || "Batch";
+
+    const fileName = `${departmentName}_${batch}_Students.xlsx`;
+
+    const workbook = XLSX.utils.book_new(); //Create a new workbook
+    const worksheet = XLSX.utils.json_to_sheet(formattedData); //Convert data (JSON) to a worksheet
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Students"); //  Append worksheet to workbook
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+    saveAs(blob, fileName);
+  };
 
   return (
     <div className="flex flex-row">
@@ -82,32 +134,39 @@ const StudentList = () => {
           />
         </div>
         <h1 className="font-bold mt-10 mb-6">All Student List</h1>
-        <table className="">
+        <table className="mb-10">
           <thead>
             <tr className="tableRow border-t border-gray-300">
-              <td className="tableData font-semibold"> First Name</td>
-              <td className="tableData  font-semibold">Last Name</td>
-              <td className="tableData  font-semibold">Semester</td>
+              <td className="tableData font-semibold"> Name</td>
+              <td className="tableData  font-semibold">Father Name</td>
+              <td className="tableData  font-semibold">Batch</td>
               <td className="tableData  font-semibold">RollNo</td>
+              <td className="tableData  font-semibold">Reg No</td>
               <td className="tableData  font-semibold">department Name</td>
-              <td className="tableData  font-semibold">department Id</td>
+              {/* <td className="tableData  font-semibold">department Id</td> */}
               <td className="tableData  font-semibold">created At</td>
               <td className="tableData  font-semibold">Status</td>
+              {loginSession?.user?.user_metadata?.role == "Admin" ? (
+                <td>Edit</td>
+              ) : (
+                ""
+              )}
             </tr>
           </thead>
 
           <tbody>
-            {students.length > 0 ? (
+            {/* For BS students */}
+            {students?.length > 0 ? (
               students.map((student, index) => (
                 <tr className="tableRow" key={index}>
-                  <td className="tableData">{student?.first_name}</td>
-                  <td className="tableData">{student?.last_name}</td>
-                  <td className="tableData">{student?.semester}</td>
-                  <td className="tableData">{student?.student_rollno}</td>
+                  <td className="tableData">{student?.name}</td>
+                  <td className="tableData">{student?.father_name}</td>
+                  <td className="tableData">{student?.batch}</td>
+                  <td className="tableData">{student?.rollno}</td>
+                  <td className="tableData">{student?.registration_number}</td>
                   <td className="tableData">
                     {student?.department?.department_name}
                   </td>
-                  <td className="tableData">{student?.department_id}</td>
                   <td className="tableData">
                     {new Date(student.created_at).toLocaleDateString("es-US", {
                       year: "numeric",
@@ -115,12 +174,85 @@ const StudentList = () => {
                       day: "numeric",
                     })}
                   </td>
+                  <td
+                    className={`tableData ${
+                      student.feeSubmission?.[0]?.registration_number
+                        ? "text-green-800 font-semibold"
+                        : "text-red-700 font-semibold"
+                    }`}
+                  >
+                    {student.feeSubmission?.[0]?.registration_number
+                      ? "Submitted"
+                      : "Not Submitted"}
+                  </td>
+
+                  {loginSession?.user?.user_metadata?.role === "Admin" &&
+                    student.feeSubmission?.[0]?.registration_number && (
+                      <td>
+                        <button
+                          onClick={() =>
+                            navigate("/feeSubmission", { state: { student } })
+                          }
+                          className="text-black underline px-3 py-1 rounded-md hover:text-sky-700 transition"
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    )}
+                </tr>
+              ))
+            ) : interStudent?.length > 0 ? (
+              interStudent.map((student, index) => (
+                // console.log(student),
+                <tr className="tableRow" key={index}>
+                  <td className="tableData">{student?.name}</td>
+                  <td className="tableData">{student?.father_name}</td>
+                  <td className="tableData">{student?.batch}</td>
+                  <td className="tableData">{student?.rollno}</td>
+                  <td className="tableData">
+                    {student?.inter_student_registration}
+                  </td>
+                  <td className="tableData">{student.inter.class_name}</td>
+                  <td className="tableData">
+                    {new Date(student.created_at).toLocaleDateString("es-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </td>
+                  <td
+                    className={`tableData ${
+                      student.feeSubmission?.[0]?.inter_student_registration
+                        ? "text-green-800 font-semibold"
+                        : "text-red-700 font-semibold"
+                    }`}
+                  >
+                    {student.feeSubmission?.[0]?.inter_student_registration
+                      ? "Submitted"
+                      : "Not Submitted"}
+                  </td>
+
+                  {loginSession?.user?.user_metadata?.role === "Admin" &&
+                    student.feeSubmission?.[0]?.inter_student_registration && (
+                      <td>
+                        <button
+                          onClick={() =>
+                            navigate("/feeSubmission", {
+                              state: { student },
+                            })
+                          }
+                          className="text-black underline px-3 py-1 rounded-md hover:text-sky-700 transition"
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    )}
                 </tr>
               ))
             ) : (
               <tr>
                 <td
-                  colSpan="4"
+                  colSpan="9"
                   className="text-center py-6 text-gray-400 italic"
                 >
                   No students found
@@ -129,6 +261,13 @@ const StudentList = () => {
             )}
           </tbody>
         </table>
+        <Button
+          onClick={() =>
+            download(students?.length > 0 ? students : interStudent)
+          }
+        >
+          Download Report
+        </Button>
       </div>
     </div>
   );

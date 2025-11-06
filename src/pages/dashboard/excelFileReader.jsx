@@ -3,7 +3,7 @@ import * as XLSX from "xlsx";
 import "../../constant/applicationStyle.css";
 import "../style/excelFileReader.css";
 import Button from "../../component/button/button";
-import { studentList } from "../../store/Thunk/commonThunk";
+import { studentList, interStudentList } from "../../store/Thunk/commonThunk";
 import { useDispatch, useSelector } from "react-redux";
 import SideBar from "../../component/sideBar";
 
@@ -23,11 +23,12 @@ function ExcelFileReader() {
       const parseData = XLSX.utils.sheet_to_json(sheet);
 
       const requiredColumns = [
-        "first_name",
-        "last_name",
-        "semester",
-        "Rollno",
-        "department_id",
+        "Name",
+        "Father Name",
+        "Batch",
+        "Registration No",
+        "Department",
+        "RollNo",
       ];
       const filteredData = parseData.map((row) => {
         const filteredRow = {};
@@ -41,33 +42,46 @@ function ExcelFileReader() {
   };
   // console.log("log", data);
 
+  const storedDepartment = localStorage.getItem("selectedDepartment");
+  const selectedDeprt = storedDepartment ? JSON.parse(storedDepartment) : null;
+  // console.log("feesList", selectedDeprt);
+
   const submitStudentList = async () => {
     try {
       const invalid = data.filter(
         (row) =>
-          !row["first_name"]?.trim() ||
-          !row["Rollno"]?.toString().trim() ||
-          !row["department_id"]?.toString().trim()
+          !row["Name"]?.trim() ||
+          !row["Registration No"]?.toString().trim() ||
+          !row["Department"]?.toString().trim() ||
+          !row["Batch"]?.toString().trim()
       );
 
       if (invalid.length > 0) {
         alert(
-          "Some rows are missing required fields (first_name,RollNo, or department_id)."
+          "Some rows are missing required fields (Name,RollNo,Batch or Department)."
         );
         return; // Stop submission if invalid
       }
 
-      const result = await dispatch(studentList(data)).unwrap();
+      let result = 0;
+
+      if (selectedDeprt?.study_level == "BS") {
+        result = await dispatch(studentList(data)).unwrap();
+      } else {
+        result = await dispatch(interStudentList(data)).unwrap();
+      }
       setData([]);
       alert("Student list submitted successfully!");
     } catch (err) {
       console.error("Insert failed:", err);
+      alert("Student list submitted failed");
+      setData([]);
     }
   };
 
   return (
     <div className="flex flex-row gap-2">
-      <div className="w-1/5">
+      <div className="">
         <SideBar />
       </div>
       <div className="">

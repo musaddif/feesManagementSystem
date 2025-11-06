@@ -6,7 +6,7 @@ import { departmentList } from "../../constant/lists";
 import { intermediateList } from "../../constant/lists";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { allDepartments } from "../../store/Thunk/commonThunk";
+import { allDepartments, getFScdeprt } from "../../store/Thunk/commonThunk";
 
 const Department = () => {
   const location = useLocation();
@@ -14,20 +14,23 @@ const Department = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const allDepartment = useSelector((state) => state.common.department);
-  // console.log("allDepartment = ", allDepartment);
+  const FScDepartment = useSelector((state) => state.common.interDepartments);
+  // console.log("FScDepartment = ", FScDepartment);
 
   const handleNavigation = (type) => {
     // Navigate to the fee submission form with the selected department type
     localStorage.setItem("selectedDepartment", JSON.stringify(type));
-    navigate("/feeSubmission");
+    // navigate("/feeSubmission");
+    navigate("/excelReader");
   };
 
   useEffect(() => {
     dispatch(allDepartments());
+    dispatch(getFScdeprt());
   }, []);
 
   return (
-    <div className="backgroundStyle">
+    <div className="backgroundStyle !h-full sm:!h-screen md:!h-screen lg:!h-screen ">
       {selectedType == "BS" ? (
         <div className="container">
           <h1 className="text-2xl font-bold">Department</h1>
@@ -49,13 +52,13 @@ const Department = () => {
         <div className="container">
           <h1 className="text-2xl font-bold">Intermediate</h1>
           <div className="flex flex-wrap flex-row gap-4 justify-center">
-            {intermediateList.map((inter, index) => (
+            {FScDepartment.map((inter, index) => (
               <Button
                 key={index}
                 onClick={() => handleNavigation(inter)}
                 className=""
               >
-                {inter}
+                {inter?.class_name}
               </Button>
             ))}
           </div>

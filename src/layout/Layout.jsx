@@ -7,16 +7,69 @@ import FeeSubmission from "../pages/dashboard/feeSubmission";
 import NotFound from "../pages/auth/notFound";
 import ExcelFileReader from "../pages/dashboard/excelFileReader";
 import StudentList from "../pages/dashboard/studentList";
-
+import ProtectedRoute from "./ProtectedRoute";
+import AdminDashboard from "../pages/admin/AdminDashboard";
+import Report from "../pages/dashboard/report";
 const Layout = () => {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/department" element={<Department />} />
-      <Route path="/feeSubmission" element={<FeeSubmission />} />
-      <Route path="/excelReader" element={<ExcelFileReader />} />
-      <Route path="/studentList" element={<StudentList />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/department"
+        element={
+          <ProtectedRoute>
+            <Department />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/feeSubmission"
+        element={
+          <ProtectedRoute>
+            <FeeSubmission />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/excelReader"
+        element={
+          <ProtectedRoute>
+            <ExcelFileReader />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/studentList"
+        element={
+          <ProtectedRoute>
+            <StudentList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/adminDashboard"
+        element={
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/report"
+        element={
+          <ProtectedRoute>
+            <Report />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

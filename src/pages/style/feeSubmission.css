@@ -11,3 +11,6 @@
 .label {
   @apply ml-1 text-lg;
 }
+.dropDown {
+  @apply border rounded-md p-2;
+}

@@ -5,6 +5,10 @@ const initialState = {
   fee_submission: [],
   addStudentList: [],
   getAllStudent: [],
+  getFee: [],
+  interDepartments: [],
+  getAllInterStudent: [],
+  financeReport: [],
 };
 
 export const commonSlice = createSlice({
@@ -19,6 +23,7 @@ export const commonSlice = createSlice({
       ...state,
       fees: action.payload,
     }),
+
     feeSubmissionSlice: (state, action) => ({
       ...state,
       fee_submission: action.payload,
@@ -31,14 +36,34 @@ export const commonSlice = createSlice({
       ...state,
       getAllStudent: action.payload,
     }),
+    getInterStudentList: (state, action) => ({
+      ...state,
+      getAllInterStudent: action.payload,
+    }),
+    getFeeSlice: (state, action) => ({
+      ...state,
+      getFee: action.payload,
+    }),
+    interDeprt: (state, action) => ({
+      ...state,
+      interDepartments: action.payload,
+    }),
+    report: (state, action) => ({
+      ...state,
+      financeReport: action.payload,
+    }),
   },
 });
 
 export const {
   department,
+  report,
   feeSlice,
+  getInterStudentList,
   feeSubmissionSlice,
   addStudents,
   getstudentList,
+  getFeeSlice,
+  interDeprt,
 } = commonSlice.actions;
 export default commonSlice.reducer;

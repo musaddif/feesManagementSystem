@@ -2,6 +2,7 @@
   @apply w-full px-10 h-2/4  bg-gradient-to-br
    from-gray-800 via-gray-900 to-black 
    text-white flex rounded-lg justify-center
+   
     items-center m-[40%];
 }
 .tableStyle {
@@ -17,9 +18,8 @@
   @apply px-6 py-3 text-gray-700;
 }
 .tableData {
-  @apply text-black
-  
-  p-4
+  @apply p-4
+   
   text-center
   gap-24;
 }

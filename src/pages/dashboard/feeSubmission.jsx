@@ -2,71 +2,165 @@ import { useLocation, useNavigate, useNavigation } from "react-router-dom";
 import "../style/department.css";
 import "../style/feeSubmission.css";
 import "../../constant/applicationStyle.css";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getFees, submitFees } from "../../store/Thunk/commonThunk";
+import {
+  getAllStudents,
+  getFees,
+  submitFees,
+  updateFee,
+  getIntermadiateFees,
+  getAllInterStudents,
+  interSubmitFees,
+} from "../../store/Thunk/commonThunk";
 import Button from "../../component/button/button";
 import ExcelFileReader from "./excelFileReader";
 import SideBar from "../../component/sideBar";
 
 const FeeSubmission = () => {
-  const [rollNo, setRollNo] = useState("");
+  const [registrationNumber, setRegistrationNumber] = useState("");
   const [checkedItems, setCheckedItems] = useState({});
   const [totalFee, setTotalFee] = useState(0);
   const [message, setMessage] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [studentList, setStudentList] = useState([]);
+  const [batchValue, setBatchValue] = useState("2022");
 
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const feesList = useSelector((state) => state.common.fees);
-  //json.parse() is converting string in to js object
+  const studentRecord = location.state?.student;
+  // console.log("StudentRecord", studentRecord);
+
   useEffect(() => {
-    const storedDepartment = localStorage.getItem("selectedDepartment");
-    const selectedDepartment = storedDepartment
-      ? JSON.parse(storedDepartment)
-      : null;
-    // console.log("local", selectedDepartment);
-    dispatch(getFees({ id: selectedDepartment?.department_id }));
-  }, [dispatch]);
+    if (studentRecord && Object.keys(studentRecord).length > 0) {
+      setRegistrationNumber(
+        studentRecord?.registration_number ||
+          studentRecord?.inter_student_registration
+      );
+      setBatchValue(studentRecord?.batch);
+      const feeTypeString = studentRecord.feeSubmission[0].fee_type;
+      const initialCheckedItems = JSON.parse(feeTypeString);
+      setCheckedItems(initialCheckedItems);
+      setTotalFee(studentRecord.feeSubmission[0].amount);
+    }
+  }, [studentRecord, updateFee]);
+
+  const storedDepartment = localStorage.getItem("selectedDepartment");
+  const selectedDeprt = storedDepartment ? JSON.parse(storedDepartment) : null;
+  const feesList = useSelector((state) => state.common.fees);
+
+  let getstudentList;
+  {
+    selectedDeprt?.study_level === "BS"
+      ? (getstudentList = useSelector((state) => state.common.getAllStudent))
+      : (getstudentList = useSelector(
+          (state) => state.common.getAllInterStudent
+        ));
+  }
+  // console.log("getstudentList", getstudentList);
+
+  useEffect(() => {
+    setSelectedDepartment(selectedDeprt);
+    if (selectedDeprt?.study_level === "BS") {
+      dispatch(getFees({ department_name: selectedDeprt.department_name }));
+      dispatch(getAllStudents({ deprt: selectedDeprt.department_name }));
+    } else if (selectedDeprt?.study_level === "FSc") {
+      dispatch(getIntermadiateFees({ class_name: selectedDeprt.class_name }));
+      dispatch(getAllInterStudents({ deprt: selectedDeprt.class_name }));
+    }
+  }, []);
 
   const handleCheckBoxes = (e) => {
     const { name, checked } = e.target;
     setCheckedItems((prev) => {
       const updated = { ...prev, [name]: checked };
+
       let newTotal = 0;
-      feesList.forEach((fee) => {
-        if (updated[fee.fees_name]) {
-          newTotal = newTotal + Number(fee.amount);
+      Object.keys(feesList[0]).forEach((key) => {
+        if (updated[key]) {
+          newTotal += Number(feesList[0][key]);
         }
       });
-
       setTotalFee(newTotal);
       return updated;
     });
   };
-  // console.log("Checked items:", checkedItems);
+  const feeKeys =
+    Array.isArray(feesList) && feesList.length > 0
+      ? Object.keys(feesList[0]).filter(
+          (key) =>
+            key !== "department_id" &&
+            key !== "id" &&
+            key !== "amount" &&
+            key !== "department_name" &&
+            key !== "modify_by" &&
+            key !== "created_at" &&
+            key !== "class_name"
+        )
+      : [];
 
   const feeSubmit = () => {
-    if (!rollNo || Object.keys(checkedItems).length === 0) {
+    if (!registrationNumber || Object.keys(checkedItems).length === 0) {
       setMessage("Choose roll no or fee type");
       return;
     }
     const formData = {
       checkedItems,
       totalFee,
-      rollNo,
+      registrationNumber,
+    };
+    // console.log("formData", formData);
+    if (selectedDeprt?.study_level == "BS") {
+      dispatch(submitFees(formData))
+        .then((result) => {
+          if (result.payload?.success) {
+            setTotalFee(0);
+            setCheckedItems({});
+            setRegistrationNumber("");
+            setMessage("Data insertion successful!");
+          } else {
+            setMessage(result.payload?.message || "Data insertion failed");
+          }
+        })
+        .catch((error) => {
+          setMessage(error.message || "Data insertion failed");
+        });
+    } else {
+      dispatch(interSubmitFees(formData))
+        .then((result) => {
+          if (result.payload?.success) {
+            setTotalFee(0);
+            setCheckedItems({});
+            setRegistrationNumber("");
+            setMessage("Data insertion successful!");
+          } else {
+            setMessage(result.payload?.message || "Data insertion failed");
+          }
+        })
+        .catch((error) => {
+          setMessage(error.message || "Data insertion failed");
+        });
+    }
+  };
+
+  const updateRecord = () => {
+    if (!registrationNumber || Object.keys(checkedItems).length === 0) {
+      setMessage("Choose roll no or fee type");
+      return;
+    }
+    const formData = {
+      checkedItems,
+      totalFee,
+      registrationNumber,
     };
 
-    dispatch(submitFees(formData))
+    dispatch(updateFee(formData))
       .then((result) => {
         if (result.payload?.success) {
-          setTotalFee(0);
-          setCheckedItems({});
-          setRollNo("");
           setMessage("Data insertion successful!");
         } else {
-          // Handle case where action succeeded but operation failed
           setMessage(result.payload?.message || "Data insertion failed");
         }
       })
@@ -74,39 +168,112 @@ const FeeSubmission = () => {
         setMessage(error.message || "Data insertion failed");
       });
   };
+
+  const filterOnBatchValue = useCallback(() => {
+    if (!Array.isArray(getstudentList)) return;
+
+    const result = getstudentList.filter((studentData) => {
+      const studentBatch = (studentData.batch || "").toLowerCase().trim();
+      return studentBatch.includes(batchValue.toLowerCase().trim());
+    });
+
+    setStudentList(result);
+  }, [batchValue, getstudentList]);
+
+  useEffect(() => {
+    filterOnBatchValue();
+  }, [batchValue, filterOnBatchValue]);
+
+  useEffect(() => {
+    filterOnBatchValue();
+  }, []);
+
+  const handleBatch = (e) => {
+    setBatchValue(e.target.value);
+  };
+
+  // const batch = [2022, 2023, 2024, 2025];
+
   return (
     <div className="flex flex-row bg-gradient-to-br from-gray-800 via-gray-900 to-black">
-      <div className="w-1/6 shadow-2xl rounded-2xl z-10">
+      <div className=" shadow-2xl rounded-2xl z-10">
         <SideBar />
       </div>
-      <div className="backgroundStyle flex-1">
+      <div className="backgroundStyle flex-1 !h-full ">
         <div className="FormContainer">
           <h1 className="text-2xl font-bold">Fee Submission Form</h1>
+          <h2 className="font-semibold">
+            Deparment :
+            {selectedDepartment?.department_name ||
+              selectedDepartment?.class_name}
+          </h2>
 
-          {/* Student Roll No input */}
-          <div className="flex flex-row gap-6 w-full items-center justify-center  ">
-            <label className="">Student Roll No:</label>
-            <input
-              type="text"
-              value={rollNo}
-              onChange={(e) => setRollNo(e.target.value)}
-              placeholder="Enter student Roll No"
-              className="rollnoInput"
-            />
+          <div className="flex flex-row gap-2 w-full items-center justify-center">
+            <label className="">Student Registration No:</label>
+            <select
+              className="dropDown mr-6"
+              onChange={(e) => setRegistrationNumber(e.target.value)}
+              value={registrationNumber}
+            >
+              <option value="" disabled>
+                Select a Reg: No.
+              </option>
+              {studentList.map((item, index) => (
+                <option
+                  key={index}
+                  value={
+                    selectedDeprt?.study_level === "BS"
+                      ? item.registration_number
+                      : item.inter_student_registration
+                  }
+                >
+                  {selectedDeprt?.study_level === "BS"
+                    ? item.registration_number
+                    : item.inter_student_registration}
+                </option>
+              ))}
+            </select>
+            {/* 
+            <label>Batch</label>
+            <select
+              className="dropDown"
+              onChange={handleBatch}
+              value={batchValue}
+            >
+              {batch.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select> */}
+            <label>Batch</label>
+            <select
+              className="dropDown"
+              onChange={handleBatch}
+              value={batchValue}
+            >
+              {[...new Set(getstudentList.map((item) => item.batch))].map(
+                (batch) => (
+                  <option key={batch} value={batch}>
+                    {batch}
+                  </option>
+                )
+              )}
+            </select>
           </div>
 
           <div className="flex flex-wrap gap-4 justify-center items-center w-full mb-4">
-            {feesList.map((fee) => (
-              <div className="flex items-center gap-2" key={fee.id}>
+            {feeKeys.map((key) => (
+              <div key={key} className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  id={fee.fees_name}
-                  name={fee.fees_name}
-                  checked={!!checkedItems[fee.fees_name]}
+                  id={key}
+                  name={key}
+                  checked={!!checkedItems[key]}
                   onChange={handleCheckBoxes}
                 />
-                <label htmlFor={fee.fees_name} className="label capitalize">
-                  {fee.fees_name.replace(/_/g, " ")}
+                <label htmlFor={key} className="capitalize">
+                  {key.replace(/_/g, " ")}
                 </label>
               </div>
             ))}
@@ -134,7 +301,13 @@ const FeeSubmission = () => {
             </p>
           )}
           <div className="flex flex-row gap-3">
-            <Button onClick={feeSubmit}>Submit Fee</Button>
+            {/* <Button onClick={feeSubmit}>
+              Submit Fee</Button> */}
+            {studentRecord && Object.keys(studentRecord).length > 0 ? (
+              <Button onClick={updateRecord}>Update Fee</Button>
+            ) : (
+              <Button onClick={feeSubmit}>Submit Fee</Button>
+            )}
           </div>
         </div>
       </div>

@@ -13,10 +13,10 @@ const NotFound = () => {
         <p className="mt-4 text-gray-500">We can't find that page.</p>
 
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate("/")}
           className="btn btn-gradient mx-auto mt-5"
         >
-          Go Back Home
+          Back To Login
         </button>
       </div>
     </div>

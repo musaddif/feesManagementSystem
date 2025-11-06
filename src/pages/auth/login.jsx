@@ -5,6 +5,8 @@ import { supabase } from "../../supabaseClient";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../component/button/button";
+import { useDispatch, useSelector } from "react-redux";
+import { login } from "../../store/Thunk/authThunk";
 
 const Login = () => {
   const [username, setUserName] = useState("");
@@ -17,36 +19,26 @@ const Login = () => {
   const [role, setRole] = useState("");
 
   const navigate = useNavigate();
-  console.log("role", role);
+  const dispatch = useDispatch();
 
   const handleLogin = async () => {
     setLoading(true);
     setMessage("");
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const resultAction = await dispatch(login({ email, password }));
+      // console.log("login", resultAction?.payload?.user?.user_metadata?.role);
 
-      if (error) {
-        setMessage("Login failed: " + error.message);
-        return;
+      if (login.fulfilled.match(resultAction)) {
+        setMessage("Login successful!");
+        if (resultAction?.payload?.user?.user_metadata?.role == "Admin") {
+          navigate("/admin/adminDashboard");
+        } else {
+          navigate("/dashboard");
+        }
+      } else if (login.rejected.match(resultAction)) {
+        setMessage("Login failed: " + resultAction.payload);
       }
-
-      setMessage("Login successful!");
-      // console.log("admin", data);
-
-      navigate("/dashboard");
-
-      // Optional: Fetch user profile from your custom `user` table
-      // const { data: userProfile } = await supabase
-      //   .from("user")
-      //   .select("*")
-      //   .eq("user_id", data.user.id)
-      //   .single();
-
-      // console.log("User profile:", userProfile);
     } catch (err) {
       setMessage("Unexpected error: " + err.message);
     } finally {
