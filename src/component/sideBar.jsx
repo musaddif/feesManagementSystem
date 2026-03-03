@@ -41,6 +41,16 @@ const SideBar = () => {
       </Button>
       <ul className="text-white space-y-8 mt-14">
         <li
+          className={`hover:text-gray-300 cursor-pointer font-semibold flex flex-row gap-2
+        ${path.includes("/students") ? "text-black" : ""}
+        `}
+        >
+          <Link to="/students" className="flex flex-row gap-2">
+            <FaClipboardList size={20} />
+            Students
+          </Link>
+        </li>
+        <li
           className={`hover:text-gray-300 cursor-pointer font-semibold ${
             path.includes("/excelReader") ? "text-black" : ""
           }`}
@@ -81,6 +91,7 @@ const SideBar = () => {
             Report
           </Link>
         </li>
+
         <li className="hover:text-gray-300 cursor-pointer font-semibold flex flex-row gap-2  ">
           <FaSignOutAlt size={20} />
           <button onClick={handleLogOut}>logout</button>

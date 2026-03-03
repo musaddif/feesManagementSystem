@@ -8,18 +8,18 @@ const persistAuth = {
   key: "auth",
   storage,
 };
-// const persistCommon = {
-//   key: "common",
-//   storage,
-// };
+const persistCommon = {
+  key: "common",
+  storage,
+};
 
 const persistAuthReducer = persistReducer(persistAuth, authReducer);
-// const persistCommonReducer = persistReducer(persistCommon, commonReducer);
+const persistCommonReducer = persistReducer(persistCommon, commonReducer);
 
 const store = configureStore({
   reducer: {
     auth: persistAuthReducer,
-    common: commonReducer,
+    common: persistCommonReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

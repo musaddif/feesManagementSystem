@@ -12,10 +12,12 @@ import {
   getIntermadiateFees,
   getAllInterStudents,
   interSubmitFees,
+  getStudent,
 } from "../../store/Thunk/commonThunk";
 import Button from "../../component/button/button";
 import ExcelFileReader from "./excelFileReader";
 import SideBar from "../../component/sideBar";
+import { semester } from "../../constant/lists";
 
 const FeeSubmission = () => {
   const [registrationNumber, setRegistrationNumber] = useState("");
@@ -24,20 +26,45 @@ const FeeSubmission = () => {
   const [message, setMessage] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [studentList, setStudentList] = useState([]);
-  const [batchValue, setBatchValue] = useState("2022");
+  const [batchValue, setBatchValue] = useState("2021");
+  const [studentSemester, setStudentSemester] = useState("");
+  const [getStudentData, setGetStudentData] = useState([]);
 
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
 
   const studentRecord = location.state?.student;
-  // console.log("StudentRecord", studentRecord);
+  useEffect(() => {
+    dispatch(
+      getStudent({
+        registrationNumber: registrationNumber,
+        studentSemester: studentSemester,
+      }),
+    )
+      .unwrap()
+      .then((res) => {
+        const row = res?.[0];
+
+        const feeTypeObj =
+          typeof row?.fee_type === "string"
+            ? JSON.parse(row.fee_type)
+            : row?.fee_type || {};
+
+        const onlyTrueFeeType = Object.fromEntries(
+          Object.entries(feeTypeObj).filter(([_, v]) => v),
+        );
+
+        setGetStudentData(onlyTrueFeeType);
+      })
+      .catch(console.error);
+  }, [registrationNumber, studentSemester]);
 
   useEffect(() => {
     if (studentRecord && Object.keys(studentRecord).length > 0) {
       setRegistrationNumber(
         studentRecord?.registration_number ||
-          studentRecord?.inter_student_registration
+          studentRecord?.inter_student_registration,
       );
       setBatchValue(studentRecord?.batch);
       const feeTypeString = studentRecord.feeSubmission[0].fee_type;
@@ -56,10 +83,9 @@ const FeeSubmission = () => {
     selectedDeprt?.study_level === "BS"
       ? (getstudentList = useSelector((state) => state.common.getAllStudent))
       : (getstudentList = useSelector(
-          (state) => state.common.getAllInterStudent
+          (state) => state.common.getAllInterStudent,
         ));
   }
-  // console.log("getstudentList", getstudentList);
 
   useEffect(() => {
     setSelectedDepartment(selectedDeprt);
@@ -97,19 +123,24 @@ const FeeSubmission = () => {
             key !== "department_name" &&
             key !== "modify_by" &&
             key !== "created_at" &&
-            key !== "class_name"
+            key !== "class_name",
         )
       : [];
 
   const feeSubmit = () => {
-    if (!registrationNumber || Object.keys(checkedItems).length === 0) {
-      setMessage("Choose roll no or fee type");
+    if (
+      !registrationNumber ||
+      Object.keys(checkedItems).length === 0 ||
+      !studentSemester
+    ) {
+      setMessage("check roll no, semester or fee type");
       return;
     }
     const formData = {
       checkedItems,
       totalFee,
       registrationNumber,
+      studentSemester,
     };
     // console.log("formData", formData);
     if (selectedDeprt?.study_level == "BS") {
@@ -119,6 +150,7 @@ const FeeSubmission = () => {
             setTotalFee(0);
             setCheckedItems({});
             setRegistrationNumber("");
+            setStudentSemester("");
             setMessage("Data insertion successful!");
           } else {
             setMessage(result.payload?.message || "Data insertion failed");
@@ -146,20 +178,25 @@ const FeeSubmission = () => {
   };
 
   const updateRecord = () => {
-    if (!registrationNumber || Object.keys(checkedItems).length === 0) {
-      setMessage("Choose roll no or fee type");
+    if (
+      !registrationNumber ||
+      Object.keys(checkedItems).length === 0 ||
+      !studentSemester
+    ) {
+      setMessage("pick roll no, semester or fee type");
       return;
     }
     const formData = {
       checkedItems,
       totalFee,
       registrationNumber,
+      studentSemester,
     };
 
     dispatch(updateFee(formData))
       .then((result) => {
         if (result.payload?.success) {
-          setMessage("Data insertion successful!");
+          setMessage("update successful!");
         } else {
           setMessage(result.payload?.message || "Data insertion failed");
         }
@@ -192,8 +229,6 @@ const FeeSubmission = () => {
     setBatchValue(e.target.value);
   };
 
-  // const batch = [2022, 2023, 2024, 2025];
-
   return (
     <div className="flex flex-row bg-gradient-to-br from-gray-800 via-gray-900 to-black">
       <div className=" shadow-2xl rounded-2xl z-10">
@@ -216,7 +251,7 @@ const FeeSubmission = () => {
               value={registrationNumber}
             >
               <option value="" disabled>
-                Select a Reg: No.
+                Select a Reg.No:
               </option>
               {studentList.map((item, index) => (
                 <option
@@ -233,19 +268,7 @@ const FeeSubmission = () => {
                 </option>
               ))}
             </select>
-            {/* 
-            <label>Batch</label>
-            <select
-              className="dropDown"
-              onChange={handleBatch}
-              value={batchValue}
-            >
-              {batch.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select> */}
+
             <label>Batch</label>
             <select
               className="dropDown"
@@ -257,26 +280,55 @@ const FeeSubmission = () => {
                   <option key={batch} value={batch}>
                     {batch}
                   </option>
-                )
+                ),
               )}
+            </select>
+            <label className="">Semester:</label>
+            <select
+              className="dropDown mr-6"
+              onChange={(e) => setStudentSemester(e.target.value)}
+              value={studentSemester}
+            >
+              <option value="" disabled>
+                Semester
+              </option>
+              {semester.map((item, index) => (
+                <option
+                  key={index}
+                  value={
+                    item
+                    // selectedDeprt?.study_level === "BS"
+                    //   ? item
+                    //   : item.inter_student_registration
+                  }
+                >
+                  {item}
+                  {/* {selectedDeprt?.study_level === "BS"
+                    ? item
+                    : item.inter_student_registration} */}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="flex flex-wrap gap-4 justify-center items-center w-full mb-4">
-            {feeKeys.map((key) => (
-              <div key={key} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id={key}
-                  name={key}
-                  checked={!!checkedItems[key]}
-                  onChange={handleCheckBoxes}
-                />
-                <label htmlFor={key} className="capitalize">
-                  {key.replace(/_/g, " ")}
-                </label>
-              </div>
-            ))}
+            {feeKeys.map(
+              (key) =>
+                !getStudentData?.[key] && (
+                  <div key={key} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id={key}
+                      name={key}
+                      checked={!!checkedItems[key]}
+                      onChange={handleCheckBoxes}
+                    />
+                    <label htmlFor={key} className="capitalize">
+                      {key.replace(/_/g, " ")}
+                    </label>
+                  </div>
+                ),
+            )}
           </div>
 
           {/* Total Fee Display */}
@@ -303,7 +355,8 @@ const FeeSubmission = () => {
           <div className="flex flex-row gap-3">
             {/* <Button onClick={feeSubmit}>
               Submit Fee</Button> */}
-            {studentRecord && Object.keys(studentRecord).length > 0 ? (
+            {(studentRecord && Object.keys(studentRecord).length > 0) ||
+            Object.keys(getStudentData || {}).length > 0 ? (
               <Button onClick={updateRecord}>Update Fee</Button>
             ) : (
               <Button onClick={feeSubmit}>Submit Fee</Button>

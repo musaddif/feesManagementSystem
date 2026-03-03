@@ -57,7 +57,7 @@ const Report = () => {
     setTotals({ admission, college, exam, registration, crf, idCard });
   }, [financeReport, feesList]);
 
-  console.log("Totals:", totals);
+  // console.log("Totals:", totals);
 
   useEffect(() => {
     if (selectedDeprt?.study_level === "BS") {

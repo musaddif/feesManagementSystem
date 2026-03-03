@@ -20,8 +20,7 @@ const Department = () => {
   const handleNavigation = (type) => {
     // Navigate to the fee submission form with the selected department type
     localStorage.setItem("selectedDepartment", JSON.stringify(type));
-    // navigate("/feeSubmission");
-    navigate("/excelReader");
+    navigate("/students");
   };
 
   useEffect(() => {

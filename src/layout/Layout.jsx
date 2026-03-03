@@ -10,6 +10,7 @@ import StudentList from "../pages/dashboard/studentList";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import Report from "../pages/dashboard/report";
+import Students from "../pages/dashboard/students";
 const Layout = () => {
   return (
     <Routes>
@@ -67,6 +68,14 @@ const Layout = () => {
         element={
           <ProtectedRoute>
             <Report />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/students"
+        element={
+          <ProtectedRoute>
+            <Students />
           </ProtectedRoute>
         }
       />

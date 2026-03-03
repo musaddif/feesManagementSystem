@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   getAllStudents,
   getAllInterStudents,
+  getSemesterStudents,
 } from "../../store/Thunk/commonThunk";
 import SideBar from "../../component/sideBar";
 import "../../constant/applicationStyle.css";
@@ -12,11 +13,17 @@ import { useLocation, useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import Button from "../../component/button/button";
+import { semester } from "../../constant/lists";
 
 const StudentList = () => {
+  const [batchArr, setBatchArr] = useState([]);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [students, setStudents] = useState([]);
   const [originalData, setOriginalData] = useState([]);
   const [isSearch, setIsSearch] = useState("");
+  const [currentSemester, setCurrentSemester] = useState("");
+  const [batchValue, setBatchValue] = useState("2021");
+
   const dispatch = useDispatch();
 
   const student = useSelector((state) => state.common.getAllStudent);
@@ -29,7 +36,31 @@ const StudentList = () => {
       : null;
 
     if (selectedDepartment?.study_level == "BS") {
-      dispatch(getAllStudents({ deprt: selectedDepartment?.department_name }));
+      dispatch(
+        getSemesterStudents({
+          deprt: selectedDepartment?.department_name,
+          currentSemester: currentSemester,
+          batchValue: batchValue,
+        }),
+      );
+    } else {
+      dispatch(getAllInterStudents({ deprt: selectedDepartment?.class_name }));
+    }
+  }, [currentSemester, batchValue]);
+  useEffect(() => {
+    const storeDeparment = localStorage.getItem("selectedDepartment");
+    const selectedDepartment = storeDeparment
+      ? JSON.parse(storeDeparment)
+      : null;
+
+    if (selectedDepartment?.study_level == "BS") {
+      dispatch(
+        getAllStudents({
+          deprt: selectedDepartment?.department_name,
+          currentSemester: currentSemester,
+          batchValue: batchValue,
+        }),
+      );
     } else {
       dispatch(getAllInterStudents({ deprt: selectedDepartment?.class_name }));
     }
@@ -39,6 +70,31 @@ const StudentList = () => {
     setStudents(student);
     setOriginalData(student);
   }, [student]);
+
+  useEffect(() => {
+    const loadBatches = async () => {
+      try {
+        const cachedBatches = localStorage.getItem("cachedBatches");
+
+        if (cachedBatches) {
+          // Use cached data
+          setBatchArr(JSON.parse(cachedBatches));
+          setInitialLoadDone(true);
+        } else {
+          const batches = [...new Set(student.map((item) => item.batch))];
+
+          // Save to state and cache
+          setBatchArr(batches);
+          localStorage.setItem("cachedBatches", JSON.stringify(batches));
+          setInitialLoadDone(true);
+        }
+      } catch (error) {
+        console.error("Error loading batches:", error);
+      }
+    };
+
+    loadBatches();
+  }, []);
 
   const searchHandler = useCallback(
     (searchData) => {
@@ -67,7 +123,7 @@ const StudentList = () => {
 
       setStudents(result);
     },
-    [originalData]
+    [originalData],
   );
 
   const location = useLocation();
@@ -116,6 +172,10 @@ const StudentList = () => {
     const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
     saveAs(blob, fileName);
   };
+  const handleBatch = (e) => {
+    setBatchValue(e.target.value);
+  };
+  console.log("data = ", students);
 
   return (
     <div className="flex flex-row">
@@ -133,7 +193,36 @@ const StudentList = () => {
             onChange={(e) => setIsSearch(e.target.value)}
           />
         </div>
-        <h1 className="font-bold mt-10 mb-6">All Student List</h1>
+        <div className=" flex flex-row gap-2 mb-6 mt-10">
+          <h1 className="font-bold mr-6">All Student List</h1>
+          <label className="">Semester:</label>
+          <select
+            className="dropDown "
+            onChange={(e) => setCurrentSemester(e.target.value)}
+            value={currentSemester}
+          >
+            <option value="" disabled>
+              Semester
+            </option>
+            {semester.map((item, index) => (
+              <option key={index} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+          <label>Batch</label>
+          <select
+            className="dropDown"
+            onChange={handleBatch}
+            value={batchValue}
+          >
+            {batchArr.map((batch) => (
+              <option key={batch} value={batch}>
+                {batch}
+              </option>
+            ))}
+          </select>
+        </div>
         <table className="mb-10">
           <thead>
             <tr className="tableRow border-t border-gray-300">
@@ -143,8 +232,12 @@ const StudentList = () => {
               <td className="tableData  font-semibold">RollNo</td>
               <td className="tableData  font-semibold">Reg No</td>
               <td className="tableData  font-semibold">department Name</td>
-              {/* <td className="tableData  font-semibold">department Id</td> */}
-              <td className="tableData  font-semibold">created At</td>
+              <td className="tableData  font-semibold">Id Card</td>
+              <td className="tableData  font-semibold">Registration Fee</td>
+              <td className="tableData  font-semibold">College Fee</td>
+              <td className="tableData  font-semibold">Admission Fee</td>
+              <td className="tableData  font-semibold">Exam Fee</td>
+              <td className="tableData  font-semibold">CRF</td>
               <td className="tableData  font-semibold">Status</td>
               {loginSession?.user?.user_metadata?.role == "Admin" ? (
                 <td>Edit</td>
@@ -167,23 +260,73 @@ const StudentList = () => {
                   <td className="tableData">
                     {student?.department?.department_name}
                   </td>
+                  <td className="tableData ">
+                    {student?.feeSubmission?.[0]?.fee_type?.id_card_fee
+                      ? "Paid"
+                      : "-"}
+                  </td>
+                  <td className="tableData  ">
+                    {student?.feeSubmission?.[0]?.fee_type?.registration_fee
+                      ? "Paid"
+                      : "-"}
+                  </td>
+                  <td className="tableData  ">
+                    {student?.feeSubmission?.[0]?.fee_type?.college_fee
+                      ? "Paid"
+                      : "-"}
+                  </td>
                   <td className="tableData">
-                    {new Date(student.created_at).toLocaleDateString("es-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
+                    {student?.feeSubmission?.[0]?.fee_type?.admission_fee
+                      ? "Paid"
+                      : "-"}
+                  </td>
+                  <td className="tableData  ">
+                    {student?.feeSubmission?.[0]?.fee_type?.exam_fee
+                      ? "Paid"
+                      : "-"}
+                  </td>
+                  <td className="tableData  ">
+                    {student?.feeSubmission?.[0]?.fee_type?.CRF ? "Paid" : "-"}
                   </td>
                   <td
-                    className={`tableData ${
-                      student.feeSubmission?.[0]?.registration_number
+                    className={`tableData ${(() => {
+                      const submission = student?.feeSubmission?.[0];
+
+                      if (!submission) {
+                        return "text-red-700 font-semibold";
+                      }
+
+                      const feeType = submission.fee_type || {};
+
+                      const isClear =
+                        feeType.CRF &&
+                        feeType.exam_fee &&
+                        feeType.admission_fee &&
+                        feeType.college_fee &&
+                        feeType.registration_fee &&
+                        feeType.id_card_fee;
+
+                      return isClear
                         ? "text-green-800 font-semibold"
-                        : "text-red-700 font-semibold"
-                    }`}
+                        : "text-red-700 font-semibold";
+                    })()}`}
                   >
-                    {student.feeSubmission?.[0]?.registration_number
-                      ? "Submitted"
-                      : "Not Submitted"}
+                    {(() => {
+                      const submission = student?.feeSubmission?.[0];
+
+                      if (!submission) return "Pending";
+
+                      const feeType = submission.fee_type || {};
+                      const isClear =
+                        feeType.CRF &&
+                        feeType.exam_fee &&
+                        feeType.admission_fee &&
+                        feeType.college_fee &&
+                        feeType.registration_fee &&
+                        feeType.id_card_fee;
+
+                      return isClear ? "Clear" : "Pending";
+                    })()}
                   </td>
 
                   {loginSession?.user?.user_metadata?.role === "Admin" &&
@@ -191,7 +334,9 @@ const StudentList = () => {
                       <td>
                         <button
                           onClick={() =>
-                            navigate("/feeSubmission", { state: { student } })
+                            navigate("/feeSubmission", {
+                              state: { student },
+                            })
                           }
                           className="text-black underline px-3 py-1 rounded-md hover:text-sky-700 transition"
                         >
