@@ -13,11 +13,13 @@ import {
   getAllInterStudents,
   interSubmitFees,
   getStudent,
+  updateInterFee,
+  getInterStudent,
 } from "../../store/Thunk/commonThunk";
 import Button from "../../component/button/button";
 import ExcelFileReader from "./excelFileReader";
 import SideBar from "../../component/sideBar";
-import { semester } from "../../constant/lists";
+import { semester, inter_class } from "../../constant/lists";
 
 const FeeSubmission = () => {
   const [registrationNumber, setRegistrationNumber] = useState("");
@@ -26,8 +28,10 @@ const FeeSubmission = () => {
   const [message, setMessage] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [studentList, setStudentList] = useState([]);
-  const [batchValue, setBatchValue] = useState("2021");
+  const [batchValue, setBatchValue] = useState("");
   const [studentSemester, setStudentSemester] = useState("");
+  const [interClass, setInterClass] = useState("");
+
   const [getStudentData, setGetStudentData] = useState([]);
 
   const dispatch = useDispatch();
@@ -35,6 +39,36 @@ const FeeSubmission = () => {
   const navigate = useNavigate();
 
   const studentRecord = location.state?.student;
+
+  const storedDepartment = localStorage.getItem("selectedDepartment");
+  const selectedDeprt = storedDepartment ? JSON.parse(storedDepartment) : null;
+  const feesList = useSelector((state) => state.common.fees);
+  useEffect(() => {
+    dispatch(
+      getInterStudent({
+        registrationNumber: registrationNumber,
+        interClass: interClass,
+      }),
+    )
+      .unwrap()
+      .then((res) => {
+        const row = res?.[0];
+
+        const feeTypeObj =
+          typeof row?.fee_type === "string"
+            ? JSON.parse(row.fee_type)
+            : row?.fee_type || {};
+
+        const onlyTrueFeeType = Object.fromEntries(
+          Object.entries(feeTypeObj).filter(([_, v]) => v),
+        );
+
+        setGetStudentData(onlyTrueFeeType);
+        console.log("GetStudentData = ", getStudentData);
+      })
+      .catch(console.error);
+  }, [registrationNumber, interClass]);
+
   useEffect(() => {
     dispatch(
       getStudent({
@@ -55,10 +89,13 @@ const FeeSubmission = () => {
           Object.entries(feeTypeObj).filter(([_, v]) => v),
         );
 
-        setGetStudentData(onlyTrueFeeType);
+        if (selectedDeprt?.study_level === "BS") {
+          setGetStudentData(onlyTrueFeeType);
+        }
       })
       .catch(console.error);
   }, [registrationNumber, studentSemester]);
+  // console.log("gffhgfg", studentRecord);
 
   useEffect(() => {
     if (studentRecord && Object.keys(studentRecord).length > 0) {
@@ -67,16 +104,12 @@ const FeeSubmission = () => {
           studentRecord?.inter_student_registration,
       );
       setBatchValue(studentRecord?.batch);
-      const feeTypeString = studentRecord.feeSubmission[0].fee_type;
-      const initialCheckedItems = JSON.parse(feeTypeString);
-      setCheckedItems(initialCheckedItems);
-      setTotalFee(studentRecord.feeSubmission[0].amount);
+      setStudentSemester(studentRecord?.feeSubmission?.[0]?.semester);
+      setInterClass(studentRecord?.inter?.class_name);
+      setCheckedItems(studentRecord?.feeSubmission?.[0]?.fee_type || {});
+      setTotalFee(studentRecord?.feeSubmission?.[0]?.amount);
     }
   }, [studentRecord, updateFee]);
-
-  const storedDepartment = localStorage.getItem("selectedDepartment");
-  const selectedDeprt = storedDepartment ? JSON.parse(storedDepartment) : null;
-  const feesList = useSelector((state) => state.common.fees);
 
   let getstudentList;
   {
@@ -128,21 +161,24 @@ const FeeSubmission = () => {
       : [];
 
   const feeSubmit = () => {
-    if (
-      !registrationNumber ||
-      Object.keys(checkedItems).length === 0 ||
-      !studentSemester
-    ) {
-      setMessage("check roll no, semester or fee type");
+    const missing = [
+      !registrationNumber && "roll number",
+      !Object.keys(checkedItems).length && "fee type",
+      selectedDeprt?.study_level === "BS" && !studentSemester && "semester",
+    ].filter(Boolean);
+
+    if (missing.length) {
+      setMessage(`check ${missing.join(", ")}`);
       return;
     }
+
     const formData = {
       checkedItems,
       totalFee,
       registrationNumber,
       studentSemester,
     };
-    // console.log("formData", formData);
+
     if (selectedDeprt?.study_level == "BS") {
       dispatch(submitFees(formData))
         .then((result) => {
@@ -160,7 +196,13 @@ const FeeSubmission = () => {
           setMessage(error.message || "Data insertion failed");
         });
     } else {
-      dispatch(interSubmitFees(formData))
+      const interFormData = {
+        checkedItems,
+        totalFee,
+        registrationNumber,
+        interClass,
+      };
+      dispatch(interSubmitFees(interFormData))
         .then((result) => {
           if (result.payload?.success) {
             setTotalFee(0);
@@ -178,12 +220,14 @@ const FeeSubmission = () => {
   };
 
   const updateRecord = () => {
-    if (
-      !registrationNumber ||
-      Object.keys(checkedItems).length === 0 ||
-      !studentSemester
-    ) {
-      setMessage("pick roll no, semester or fee type");
+    const missing = [
+      !registrationNumber && "roll number",
+      !Object.keys(checkedItems).length && "fee type",
+      selectedDeprt?.study_level === "BS" && !studentSemester && "semester",
+    ].filter(Boolean);
+
+    if (missing.length) {
+      setMessage(`check ${missing.join(", ")}`);
       return;
     }
     const formData = {
@@ -193,17 +237,42 @@ const FeeSubmission = () => {
       studentSemester,
     };
 
-    dispatch(updateFee(formData))
-      .then((result) => {
-        if (result.payload?.success) {
-          setMessage("update successful!");
-        } else {
-          setMessage(result.payload?.message || "Data insertion failed");
-        }
-      })
-      .catch((error) => {
-        setMessage(error.message || "Data insertion failed");
-      });
+    if (selectedDeprt?.study_level == "BS") {
+      dispatch(updateFee(formData))
+        .then((result) => {
+          if (result.payload?.success) {
+            setMessage("update successful!");
+          } else {
+            setMessage(result.payload?.message || "Data insertion failed");
+          }
+        })
+        .catch((error) => {
+          setMessage(error.message || "Data insertion failed");
+        });
+    } else {
+      const interFormData = {
+        checkedItems,
+        totalFee,
+        registrationNumber,
+        interClass,
+      };
+      // console.log("data to be updated = ", formData);
+
+      dispatch(updateInterFee(interFormData))
+        .then((result) => {
+          if (result.payload?.success) {
+            setTotalFee(0);
+            setCheckedItems({});
+            setRegistrationNumber("");
+            setMessage("Data insertion successful!");
+          } else {
+            setMessage(result.payload?.message || "Data insertion failed");
+          }
+        })
+        .catch((error) => {
+          setMessage(error.message || "Data insertion failed");
+        });
+    }
   };
 
   const filterOnBatchValue = useCallback(() => {
@@ -234,17 +303,31 @@ const FeeSubmission = () => {
       <div className=" shadow-2xl rounded-2xl z-10">
         <SideBar />
       </div>
-      <div className="backgroundStyle flex-1 !h-full ">
+      <div className="backgroundStyle flex-1 mt-5 !h-full ">
         <div className="FormContainer">
           <h1 className="text-2xl font-bold">Fee Submission Form</h1>
           <h2 className="font-semibold">
-            Deparment :
+            Deparment of{" "}
             {selectedDepartment?.department_name ||
               selectedDepartment?.class_name}
           </h2>
 
           <div className="flex flex-row gap-2 w-full items-center justify-center">
-            <label className="">Student Registration No:</label>
+            <label>Batch:</label>
+            <select
+              className="dropDown"
+              onChange={handleBatch}
+              value={batchValue}
+            >
+              {[...new Set(getstudentList.map((item) => item.batch))].map(
+                (batch) => (
+                  <option key={batch} value={batch}>
+                    {batch}
+                  </option>
+                ),
+              )}
+            </select>
+            <label className="">Registration No:</label>
             <select
               className="dropDown mr-6"
               onChange={(e) => setRegistrationNumber(e.target.value)}
@@ -269,46 +352,43 @@ const FeeSubmission = () => {
               ))}
             </select>
 
-            <label>Batch</label>
-            <select
-              className="dropDown"
-              onChange={handleBatch}
-              value={batchValue}
-            >
-              {[...new Set(getstudentList.map((item) => item.batch))].map(
-                (batch) => (
-                  <option key={batch} value={batch}>
-                    {batch}
-                  </option>
-                ),
-              )}
-            </select>
-            <label className="">Semester:</label>
-            <select
-              className="dropDown mr-6"
-              onChange={(e) => setStudentSemester(e.target.value)}
-              value={studentSemester}
-            >
-              <option value="" disabled>
-                Semester
-              </option>
-              {semester.map((item, index) => (
-                <option
-                  key={index}
-                  value={
-                    item
-                    // selectedDeprt?.study_level === "BS"
-                    //   ? item
-                    //   : item.inter_student_registration
-                  }
+            {selectedDeprt?.study_level === "BS" ? (
+              <>
+                <label className="">Semester</label>
+                <select
+                  className="dropDown mr-6"
+                  onChange={(e) => setStudentSemester(e.target.value)}
+                  value={studentSemester}
                 >
-                  {item}
-                  {/* {selectedDeprt?.study_level === "BS"
-                    ? item
-                    : item.inter_student_registration} */}
-                </option>
-              ))}
-            </select>
+                  <option value="" disabled>
+                    Semester
+                  </option>
+                  {semester.map((item, index) => (
+                    <option key={index} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </>
+            ) : (
+              <>
+                <label className="">Class</label>
+                <select
+                  className="dropDown mr-6"
+                  onChange={(e) => setInterClass(e.target.value)}
+                  value={interClass}
+                >
+                  <option value="" disabled>
+                    Class
+                  </option>
+                  {inter_class.map((item, index) => (
+                    <option key={index} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-4 justify-center items-center w-full mb-4">
@@ -336,7 +416,7 @@ const FeeSubmission = () => {
             <label className="">Total Fee:</label>
             <input
               type="text"
-              value={totalFee.toLocaleString()}
+              value={totalFee?.toLocaleString()}
               disabled={true}
               className="rollnoInput"
             />
@@ -353,8 +433,6 @@ const FeeSubmission = () => {
             </p>
           )}
           <div className="flex flex-row gap-3">
-            {/* <Button onClick={feeSubmit}>
-              Submit Fee</Button> */}
             {(studentRecord && Object.keys(studentRecord).length > 0) ||
             Object.keys(getStudentData || {}).length > 0 ? (
               <Button onClick={updateRecord}>Update Fee</Button>

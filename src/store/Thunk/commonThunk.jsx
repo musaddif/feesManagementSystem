@@ -11,6 +11,7 @@ import {
   interDeprt,
   getInterStudentList,
   report,
+  setReportData,
 } from "../slices/commonSlices";
 import { feesTypes, semester } from "../../constant/lists";
 
@@ -29,8 +30,6 @@ export const allDepartments = createAsyncThunk(
 export const getFees = createAsyncThunk(
   "getFees",
   async (_request, { dispatch }) => {
-    // console.log("request", _request?.department_name);
-
     try {
       const { data, error } = await supabase
         .from("fees")
@@ -55,7 +54,6 @@ export const getIntermadiateFees = createAsyncThunk(
         .eq("class_name", _request?.class_name);
       if (error) throw error;
       dispatch(feeSlice(data));
-      // console.log("request 2", data);
       // dispatch(interFeeSlice(data));
     } catch (err) {
       console.log("error", err);
@@ -104,7 +102,6 @@ export const interSubmitFees = createAsyncThunk(
   "submitFees",
 
   async (feeData, { rejectWithValue }) => {
-    // console.log("submitFees", feeData);
     try {
       const { data, error } = await supabase
         .from("feeSubmission")
@@ -113,6 +110,7 @@ export const interSubmitFees = createAsyncThunk(
             inter_student_registration: feeData?.registrationNumber,
             amount: feeData?.totalFee,
             fee_type: feeData?.checkedItems,
+            semester: feeData?.interClass,
           },
         ])
         .select();
@@ -133,62 +131,6 @@ export const interSubmitFees = createAsyncThunk(
         error: err.message,
         message: "Failed to submit fees",
       });
-    }
-  },
-);
-
-export const updateFee = createAsyncThunk(
-  "fees/updateFee",
-  async (_request, { rejectWithValue }) => {
-    try {
-      const { registrationNumber, checkedItems, totalFee, studentSemester } =
-        _request;
-
-      const { data: existing, error: fetchError } = await supabase
-        .from("feeSubmission")
-        .select("fee_type")
-        .eq("registration_number", registrationNumber)
-        .eq("semester", studentSemester)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      const existingFeeType =
-        typeof existing?.fee_type === "string"
-          ? JSON.parse(existing.fee_type)
-          : existing?.fee_type || {};
-
-      // 2️⃣ keep only NEW true values
-      const newTrueFees = Object.fromEntries(
-        Object.entries(checkedItems).filter(([_, v]) => v === true),
-      );
-
-      // 3️⃣ merge WITHOUT removing old
-      const mergedFeeType = {
-        ...existingFeeType,
-        ...newTrueFees,
-      };
-
-      // 4️⃣ update
-      const { data, error } = await supabase
-        .from("feeSubmission")
-        .update({
-          amount: totalFee,
-          fee_type: mergedFeeType,
-        })
-        .eq("registration_number", registrationNumber)
-        .select();
-
-      if (error) throw error;
-
-      return {
-        success: true,
-        message: "Fee updated successfully",
-        data: data?.[0] || null,
-      };
-    } catch (err) {
-      console.error("Error updating fee:", err);
-      return rejectWithValue(err.message);
     }
   },
 );
@@ -254,8 +196,9 @@ export const interStudentList = createAsyncThunk(
 export const getAllStudents = createAsyncThunk(
   "getAllStudents",
   async (_request = {}, { dispatch, rejectWithValue }) => {
+    // console.log("_request = ", _request);
+
     try {
-      // 🔹 Base query
       let query = supabase.from("student").select(
         `name,
            father_name,
@@ -299,6 +242,7 @@ export const getAllStudents = createAsyncThunk(
                   : item.fee_type,
             })) || [],
         })) || [];
+      // console.log("transformed = ", transformed);
 
       dispatch(getstudentList(transformed));
 
@@ -308,6 +252,7 @@ export const getAllStudents = createAsyncThunk(
     }
   },
 );
+
 export const getSemesterStudents = createAsyncThunk(
   "getSemesterStudents",
 
@@ -350,10 +295,54 @@ export const getSemesterStudents = createAsyncThunk(
     }
   },
 );
+
+export const getInterClassStudents = createAsyncThunk(
+  "getInterClassStudents ",
+  async (_request, { dispatch }) => {
+    //
+    try {
+      const { data, error } = await supabase
+        .from("interStudent")
+        .select(
+          `name,
+         father_name,
+         batch,
+         inter_student_registration,
+        created_at,
+        rollno,
+         inter(class_name),
+        feeSubmission(*)`,
+        )
+        .eq("department", _request?.deprt)
+        .eq("batch", _request?.batchValue)
+        .eq("feeSubmission.semester", _request?.interClass);
+      if (error) {
+        return rejectWithValue(error.message);
+      }
+      const transformed = data.map((student) => ({
+        ...student,
+        feeSubmission: student.feeSubmission?.map((item) => ({
+          ...item,
+          fee_type:
+            typeof item.fee_type === "string"
+              ? JSON.parse(item.fee_type)
+              : item.fee_type,
+        })),
+      }));
+      dispatch(getInterStudentList(transformed));
+
+      return transformed;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+    //
+  },
+);
+
 export const getAllInterStudents = createAsyncThunk(
   "getAllInterStudents",
   async (_request, { dispatch }) => {
-    console.log("_re", _request?.deprt);
+    // console.log("_re", _request?.deprt);
     try {
       const { data, error } = await supabase
         .from("interStudent")
@@ -372,8 +361,19 @@ export const getAllInterStudents = createAsyncThunk(
       if (error) {
         return rejectWithValue(error.message);
       }
-      dispatch(getInterStudentList(data));
-      return data;
+      const transformed = data.map((student) => ({
+        ...student,
+        feeSubmission: student.feeSubmission?.map((item) => ({
+          ...item,
+          fee_type:
+            typeof item.fee_type === "string"
+              ? JSON.parse(item.fee_type)
+              : item.fee_type,
+        })),
+      }));
+      dispatch(getInterStudentList(transformed));
+
+      return transformed;
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -444,6 +444,28 @@ export const getReport = createAsyncThunk(
   },
 );
 
+export const getInterStudent = createAsyncThunk(
+  "getInterStudent",
+  async (_request, { dispatch }) => {
+    try {
+      const { data, error } = await supabase
+        .from("interStudent")
+        .select(`feeSubmission(*)`)
+        .eq("inter_student_registration", _request?.registrationNumber)
+        .eq("feeSubmission.semester", _request?.interClass);
+
+      if (error) {
+        return rejectWithValue(error.message);
+      }
+      // console.log("feeSubmission = ", data?.[0]?.feeSubmission);
+
+      return data?.[0]?.feeSubmission;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
 export const getStudent = createAsyncThunk(
   "getStudent",
   async (_request, { dispatch }) => {
@@ -457,8 +479,391 @@ export const getStudent = createAsyncThunk(
       if (error) {
         return rejectWithValue(error.message);
       }
+      // console.log("feeSubmission = ", data?.[0]?.feeSubmission);
 
       return data?.[0]?.feeSubmission;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+// export const updateFee = createAsyncThunk(
+//   "fees/updateFee",
+//   async (_request, { rejectWithValue }) => {
+//     try {
+//       const { registrationNumber, checkedItems, totalFee, studentSemester } =
+//         _request;
+
+//       const { data: existing, error: fetchError } = await supabase
+//         .from("feeSubmission")
+//         .select("fee_type")
+//         .eq("registration_number", registrationNumber)
+//         .eq("semester", studentSemester)
+//         .single();
+
+//       if (fetchError) throw fetchError;
+
+//       const existingFeeType =
+//         typeof existing?.fee_type === "string"
+//           ? JSON.parse(existing.fee_type)
+//           : existing?.fee_type || {};
+//       const newTrueFees = Object.fromEntries(
+//         Object.entries(checkedItems).filter(([_, v]) => v === true),
+//       );
+//       const mergedFeeType = {
+//         ...existingFeeType,
+//         ...newTrueFees,
+//       };
+
+//       // 4️⃣ update
+//       const { data, error } = await supabase
+//         .from("feeSubmission")
+//         .update({
+//           amount: totalFee,
+//           fee_type: mergedFeeType,
+//         })
+//         .eq("registration_number", registrationNumber)
+//         .select();
+
+//       if (error) throw error;
+
+//       return {
+//         success: true,
+//         message: "Fee updated successfully",
+//         data: data?.[0] || null,
+//       };
+//     } catch (err) {
+//       console.error("Error updating fee:", err);
+//       return rejectWithValue(err.message);
+//     }
+//   },
+// );
+
+export const updateFee = createAsyncThunk(
+  "fees/updateFee",
+  async (_request, { rejectWithValue }) => {
+    try {
+      const { registrationNumber, checkedItems, totalFee, studentSemester } =
+        _request;
+
+      const { data: existing, error: fetchError } = await supabase
+        .from("feeSubmission")
+        .select("fee_type")
+        .eq("registration_number", registrationNumber)
+        .eq("semester", studentSemester)
+        .single();
+      if (fetchError) throw fetchError;
+
+      // Parse existing fee_type
+      const existingFeeType =
+        typeof existing?.fee_type === "string"
+          ? JSON.parse(existing.fee_type)
+          : existing?.fee_type || {};
+
+      // Get only true values from checkedItems
+      const newTrueFees = Object.fromEntries(
+        Object.entries(checkedItems).filter(([_, v]) => v === true),
+      );
+
+      // Find keys that exist in database but are false in checkedItems (need to be removed)
+      const keysToRemove = Object.keys(existingFeeType).filter(
+        (key) => checkedItems[key] === false,
+      );
+
+      // Create mergedFeeType starting with existing
+      let mergedFeeType = { ...existingFeeType };
+
+      // Add new true fees
+      mergedFeeType = {
+        ...mergedFeeType,
+        ...newTrueFees,
+      };
+
+      // Remove keys that are false in checkedItems
+      keysToRemove.forEach((key) => {
+        delete mergedFeeType[key];
+      });
+
+      // If you want to completely remove keys that are false (even if they weren't in existing)
+      // This will also remove any keys that might have been added from newTrueFees but are false
+      Object.entries(checkedItems).forEach(([key, value]) => {
+        if (value === false && mergedFeeType.hasOwnProperty(key)) {
+          delete mergedFeeType[key];
+        }
+      });
+
+      let result;
+
+      if (existing) {
+        // Update existing record
+        const { data, error } = await supabase
+          .from("feeSubmission")
+          .update({
+            amount: totalFee,
+            fee_type: mergedFeeType,
+          })
+          .eq("registration_number", registrationNumber)
+          .eq("semester", studentSemester)
+          .select();
+
+        if (error) throw error;
+        result = data?.[0] || null;
+      } else {
+        // Insert new record if doesn't exist
+        const { data, error } = await supabase
+          .from("feeSubmission")
+          .insert([
+            {
+              registration_number: registrationNumber,
+              semester: studentSemester,
+              amount: totalFee,
+              fee_type: newTrueFees, // Only insert true values for new records
+            },
+          ])
+          .select();
+
+        if (error) throw error;
+        result = data?.[0] || null;
+      }
+
+      return {
+        success: true,
+        message: existing
+          ? "Fee updated successfully"
+          : "Fee submitted successfully",
+        data: result,
+      };
+    } catch (err) {
+      console.error("Error updating fee:", err);
+      return rejectWithValue(err.message);
+    }
+  },
+);
+export const updateInterFee = createAsyncThunk(
+  "fees/updateFee",
+  async (_request, { rejectWithValue }) => {
+    try {
+      const {
+        registrationNumber,
+        checkedItems,
+        totalFee,
+        studentSemester,
+        interClass,
+      } = _request;
+
+      const { data: existing, error: fetchError } = await supabase
+        .from("feeSubmission")
+        .select("fee_type")
+        .eq("inter_student_registration", registrationNumber)
+        .eq("semester", interClass)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      const existingFeeType =
+        typeof existing?.fee_type === "string"
+          ? JSON.parse(existing.fee_type)
+          : existing?.fee_type || {};
+      // 2️⃣ keep only NEW true values
+      const newTrueFees = Object.fromEntries(
+        Object.entries(checkedItems).filter(([_, v]) => v === true),
+      );
+
+      // 3️⃣ merge WITHOUT removing old
+      const mergedFeeType = {
+        ...existingFeeType,
+        ...newTrueFees,
+      };
+
+      // 4️⃣ update
+      const { data, error } = await supabase
+        .from("feeSubmission")
+        .update({
+          amount: totalFee,
+          fee_type: mergedFeeType,
+        })
+        .eq("inter_student_registration", registrationNumber)
+        .select();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        message: "Fee updated successfully",
+        data: data?.[0] || null,
+      };
+    } catch (err) {
+      console.error("Error updating fee:", err);
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const getInterStudents = createAsyncThunk(
+  "getInterClassStudents",
+  async (_request = {}, { rejectWithValue }) => {
+    try {
+      let query = supabase.from("interStudent").select(
+        `name,
+           father_name,
+           batch,
+           inter_student_registration,
+           created_at,
+           rollno,
+           feeSubmission (registration_number, fee_type, amount, semester)`,
+      );
+      if (_request?.deprt) {
+        query = query.eq("department", _request.deprt);
+      }
+
+      if (_request?.batchValue) {
+        query = query.eq("batch", _request.batchValue);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        return rejectWithValue(error.message);
+      }
+
+      const transformed =
+        data?.map((student) => ({
+          ...student,
+          feeSubmission: student.feeSubmission?.map((item) => ({
+            ...item,
+            fee_type:
+              typeof item.fee_type === "string"
+                ? JSON.parse(item.fee_type)
+                : item.fee_type,
+          })),
+        })) || [];
+      return transformed;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const getBSStudents = createAsyncThunk(
+  "getAllStudents",
+  async (_request = {}, { rejectWithValue }) => {
+    try {
+      let query = supabase.from("student").select(
+        `name,
+         father_name,
+         batch,
+         registration_number,
+         created_at,
+         rollno,
+         department (department_name),
+         feeSubmission (registration_number, fee_type, amount, semester)`,
+      );
+
+      // 🔹 Apply filters
+      if (_request?.deprt) {
+        query = query.eq("department", _request.deprt);
+      }
+
+      if (_request?.batchValue) {
+        query = query.eq("batch", _request.batchValue);
+      }
+
+      // Note: currentSemester filter is removed as per your requirement
+
+      const { data, error } = await query;
+
+      if (error) {
+        return rejectWithValue(error.message);
+      }
+
+      // 🔹 Safe transformation
+      const transformed =
+        data?.map((student) => ({
+          ...student,
+          feeSubmission:
+            student.feeSubmission?.map((item) => ({
+              ...item,
+              fee_type:
+                typeof item.fee_type === "string"
+                  ? JSON.parse(item.fee_type)
+                  : item.fee_type,
+            })) || [],
+        })) || [];
+
+      return transformed; // Just return data without dispatching to slice
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const getReportData = createAsyncThunk(
+  "getReportData ",
+  async (_request, { dispatch }) => {
+    try {
+      const { data, error } = await supabase
+        .from("student")
+        .select(
+          `batch,
+         
+        feeSubmission(*)`,
+        )
+        .eq("department", _request?.deprt)
+        .eq("batch", _request?.batchValue);
+
+      if (error) {
+        return rejectWithValue(error.message);
+      }
+      const transformed = data.map((student) => ({
+        ...student,
+        feeSubmission: student.feeSubmission?.map((item) => ({
+          ...item,
+          fee_type:
+            typeof item.fee_type === "string"
+              ? JSON.parse(item.fee_type)
+              : item.fee_type,
+        })),
+      }));
+
+      dispatch(setReportData(transformed));
+
+      return transformed;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
+export const getInterReportData = createAsyncThunk(
+  "getReportData ",
+  async (_request, { dispatch }) => {
+    try {
+      const { data, error } = await supabase
+        .from("interStudent")
+        .select(
+          `batch,
+                 feeSubmission(*)`,
+        )
+        .eq("department", _request?.deprt)
+        .eq("batch", _request?.batchValue);
+
+      if (error) {
+        return rejectWithValue(error.message);
+      }
+      const transformed = data.map((student) => ({
+        ...student,
+        feeSubmission: student.feeSubmission?.map((item) => ({
+          ...item,
+          fee_type:
+            typeof item.fee_type === "string"
+              ? JSON.parse(item.fee_type)
+              : item.fee_type,
+        })),
+      }));
+
+      dispatch(setReportData(transformed));
+
+      return transformed;
     } catch (err) {
       return rejectWithValue(err.message);
     }

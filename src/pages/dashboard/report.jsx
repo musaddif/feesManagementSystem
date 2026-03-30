@@ -4,20 +4,29 @@ import {
   getReport,
   getIntermadiateFees,
   getFees,
+  getInterStudents,
+  getBSStudents,
+  getReportData,
+  getInterReportData,
 } from "../../store/Thunk/commonThunk";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import "../../constant/applicationStyle.css";
 import "../style/excelFileReader.css";
 
 const Report = () => {
-  // const [allStudentList, setAllStudentList] = useState([]);
+  const [batchArr, setBatchArr] = useState([]);
+  const [batch, setBatch] = useState("");
+  const [students, setStudents] = useState([]); // Store fetched students locally
+  const [isLoading, setIsLoading] = useState(false);
+  const initialFetchDone = useRef(false);
+  const batchFetchDone = useRef(false);
+
   const dispatch = useDispatch();
   const financeReport = useSelector((state) => state.common.financeReport);
   const storedDepartment = localStorage.getItem("selectedDepartment");
   const selectedDeprt = storedDepartment ? JSON.parse(storedDepartment) : null;
-  // console.log("feesList", feesList);
-  // console.log("financeReport", financeReport);
   const feesList = useSelector((state) => state.common.fees);
+  const reportData = useSelector((state) => state.common.reportData);
   const [totals, setTotals] = useState({
     admission: 0,
     college: 0,
@@ -26,10 +35,26 @@ const Report = () => {
     crf: 0,
     idCard: 0,
   });
+  useEffect(() => {
+    if (selectedDeprt.study_level === "BS") {
+      dispatch(
+        getReportData({
+          deprt: selectedDeprt?.department_name,
+          batchValue: batch,
+        }),
+      );
+    } else {
+      dispatch(
+        getInterReportData({
+          deprt: selectedDeprt?.class_name,
+          batchValue: batch,
+        }),
+      );
+    }
+  }, [batch]);
 
   useEffect(() => {
-    if (!financeReport?.length || !feesList) return;
-
+    if (!reportData?.length || !feesList) return;
     const allFees = Array.isArray(feesList)
       ? feesList.reduce((acc, item) => ({ ...acc, ...item }), {})
       : feesList;
@@ -41,10 +66,10 @@ const Report = () => {
     let crf = 0;
     let idCard = 0;
 
-    financeReport.forEach((report) => {
-      const feeType = JSON.parse(report.fee_type);
+    reportData?.[0]?.feeSubmission?.forEach((report) => {
+      const feeType = report?.fee_type;
 
-      if (feeType.admission_fee)
+      if (feeType?.admission_fee)
         admission += Number(allFees?.admission_fee || 0);
       if (feeType.college_fee) college += Number(allFees?.college_fee || 0);
       if (feeType.exam_fee) exam += Number(allFees?.exam_fee || 0);
@@ -55,9 +80,66 @@ const Report = () => {
     });
 
     setTotals({ admission, college, exam, registration, crf, idCard });
-  }, [financeReport, feesList]);
+  }, [financeReport, feesList, reportData]);
+  useEffect(() => {
+    const fetchStudents = async () => {
+      if (!selectedDeprt) return;
 
-  // console.log("Totals:", totals);
+      setIsLoading(true);
+
+      try {
+        let result;
+
+        if (selectedDeprt.study_level === "BS") {
+          result = await dispatch(
+            getBSStudents({
+              deprt: selectedDeprt.department_name,
+              batchValue: batch,
+            }),
+          ).unwrap();
+        } else {
+          result = await dispatch(
+            getInterStudents({
+              deprt: selectedDeprt?.class_name,
+              batchValue: batch,
+            }),
+          ).unwrap();
+        }
+
+        setStudents(result);
+
+        // Extract unique batches from the fetched students
+        const uniqueBatches = [...new Set(result.map((item) => item.batch))];
+        setBatchArr(uniqueBatches);
+
+        // Optionally cache the batches
+        if (uniqueBatches.length > 0) {
+          localStorage.setItem("cachedBatches", JSON.stringify(uniqueBatches));
+        }
+      } catch (error) {
+        console.error("Failed to fetch students:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, []);
+
+  useEffect(() => {
+    const loadCachedBatches = () => {
+      try {
+        const cachedBatches = localStorage.getItem("cachedBatches");
+        if (cachedBatches && batchArr.length === 0) {
+          setBatchArr(JSON.parse(cachedBatches));
+        }
+      } catch (error) {
+        console.error("Error loading cached batches:", error);
+      }
+    };
+
+    loadCachedBatches();
+  }, []);
 
   useEffect(() => {
     if (selectedDeprt?.study_level === "BS") {
@@ -66,14 +148,38 @@ const Report = () => {
       dispatch(getIntermadiateFees({ class_name: selectedDeprt.class_name }));
     }
     dispatch(getReport());
-  }, []);
+  }, [batchArr]);
+
+  const handleBatchChange = (selectedBatch) => {
+    setBatch(selectedBatch);
+  };
 
   return (
     <div className="flex flex-row ">
-      <div className=" shadow-2xl rounded-2xl z-10">
+      <div className="shadow-2xl rounded-2xl z-10">
         <SideBar />
       </div>
-      <div className="flex flex-1 flex-col justify-center items-center">
+      <div className="flex flex-1 flex-col p-4">
+        {batchArr.length > 0 && (
+          <div className=" m-6  ">
+            <label className="font-bold ">Select Batch </label>
+            <select
+              value={batch}
+              onChange={(e) => handleBatchChange(e.target.value)}
+              className="p-2 border rounded"
+            >
+              <option value="">Select Batch</option>
+              {batchArr.map((batchOption) => (
+                <option key={batchOption} value={batchOption}>
+                  {batchOption}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {isLoading && <div>Loading...</div>}
+
         <table>
           <thead>
             <tr className="tableRow border-t border-gray-300">
@@ -96,50 +202,9 @@ const Report = () => {
             </tr>
           </tbody>
         </table>
-
-        {/* <table>
-          <thead>
-            <tr className="tableRow border-t border-gray-300">
-              <td className="tableData font-semibold">Department</td>
-              <td className="tableData font-semibold">Total</td>
-            </tr>
-          </thead>
-          <tbody>
-            {financeReport &&
-              Object.entries(
-                financeReport.reduce((acc, report) => {
-                  const department =
-                    report?.interStudent?.department ||
-                    report?.student?.department;
-                  if (!acc[department]) {
-                    acc[department] = 0;
-                  }
-                  acc[department] += Number(report?.amount || 0);
-
-                  return acc;
-                }, {})
-              ).map(([department, total], index) => (
-                <tr className="tableRow" key={index}>
-                  <td className="tableData">{department}</td>
-                  <td className="tableData">{total}</td>
-                </tr>
-              ))}
-          </tbody>
-        </table> */}
-        {/* {financeReport && (
-          <h1>
-            Total Amount =
-            {financeReport.reduce(
-              (total, item) => total + Number(item?.amount || 0),
-              0
-            )}
-          </h1>
-        )} */}
-        {/* {feesList&& Object.entries(
-
-)} */}
       </div>
     </div>
   );
 };
+
 export default Report;
