@@ -12,6 +12,7 @@ import {
 import { useEffect, useState, useCallback, useRef } from "react";
 import "../../constant/applicationStyle.css";
 import "../style/excelFileReader.css";
+import Header from "../../component/header";
 
 const Report = () => {
   const [batchArr, setBatchArr] = useState([]);
@@ -27,20 +28,16 @@ const Report = () => {
   const selectedDeprt = storedDepartment ? JSON.parse(storedDepartment) : null;
   const feesList = useSelector((state) => state.common.fees);
   const reportData = useSelector((state) => state.common.reportData);
-  const [totals, setTotals] = useState({
-    admission: 0,
-    college: 0,
-    exam: 0,
-    registration: 0,
-    crf: 0,
-    idCard: 0,
-  });
+  // console.log("report data", reportData);
+
+  const [totals, setTotals] = useState([]);
+
   useEffect(() => {
     if (selectedDeprt.study_level === "BS") {
       dispatch(
         getReportData({
           deprt: selectedDeprt?.department_name,
-          batchValue: batch,
+          // batchValue: batch,
         }),
       );
     } else {
@@ -54,33 +51,69 @@ const Report = () => {
   }, [batch]);
 
   useEffect(() => {
-    if (!reportData?.length || !feesList) return;
-    const allFees = Array.isArray(feesList)
-      ? feesList.reduce((acc, item) => ({ ...acc, ...item }), {})
-      : feesList;
+    if (!reportData?.length) {
+      setTotals([]);
+      return;
+    }
 
-    let admission = 0;
-    let college = 0;
-    let exam = 0;
-    let registration = 0;
-    let crf = 0;
-    let idCard = 0;
+    const groupedTotals = reportData.reduce((acc, report) => {
+      const batch = String(report?.batch || "N/A").trim();
 
-    reportData?.[0]?.feeSubmission?.forEach((report) => {
-      const feeType = report?.fee_type;
+      // feeSubmission is array
+      const feeSubmissions = Array.isArray(report?.feeSubmission)
+        ? report.feeSubmission
+        : [];
 
-      if (feeType?.admission_fee)
-        admission += Number(allFees?.admission_fee || 0);
-      if (feeType.college_fee) college += Number(allFees?.college_fee || 0);
-      if (feeType.exam_fee) exam += Number(allFees?.exam_fee || 0);
-      if (feeType.CRF) crf += Number(allFees?.CRF || 0);
-      if (feeType.registration_fee)
-        registration += Number(allFees?.registration_fee || 0);
-      if (feeType.id_card_fee) idCard += Number(allFees?.id_card_fee || 0);
-    });
+      if (!acc[batch]) {
+        acc[batch] = {
+          batch,
+          admission: 0,
+          college: 0,
+          exam: 0,
+          registration: 0,
+          crf: 0,
+          idCard: 0,
+        };
+      }
 
-    setTotals({ admission, college, exam, registration, crf, idCard });
+      feeSubmissions.forEach((item) => {
+        const feeType = item?.fee_type || {};
+        const amount = Number(item?.amount || 0);
+
+
+        if (feeType?.admission_fee) {
+          acc[batch].admission += feesList?.[1]?.admission_fee;
+        }
+
+        if (feeType?.college_fee) {
+          acc[batch].college += feesList?.[1]?.college_fee;
+        }
+
+        if (feeType?.exam_fee) {
+          acc[batch].exam += feesList?.[1]?.exam_fee;
+        }
+
+        if (feeType?.CRF) {
+          acc[batch].crf += feesList?.[1]?.CRF;
+        }
+
+        if (feeType?.registration_fee) {
+          acc[batch].registration += feesList?.[1]?.registration_fee;
+        }
+
+        if (feeType?.id_card_fee) {
+          acc[batch].idCard += feesList?.[1]?.id_card_fee
+
+        }
+      });
+
+      return acc;
+    }, {});
+
+    setTotals(Object.values(groupedTotals));
   }, [financeReport, feesList, reportData]);
+
+
   useEffect(() => {
     const fetchStudents = async () => {
       if (!selectedDeprt) return;
@@ -155,53 +188,81 @@ const Report = () => {
   };
 
   return (
-    <div className="flex flex-row ">
-      <div className="shadow-2xl rounded-2xl z-10">
-        <SideBar />
-      </div>
-      <div className="flex flex-1 flex-col p-4">
-        {batchArr.length > 0 && (
-          <div className=" m-6  ">
-            <label className="font-bold ">Select Batch </label>
-            <select
-              value={batch}
-              onChange={(e) => handleBatchChange(e.target.value)}
-              className="p-2 border rounded"
-            >
-              <option value="">Select Batch</option>
-              {batchArr.map((batchOption) => (
-                <option key={batchOption} value={batchOption}>
-                  {batchOption}
-                </option>
-              ))}
-            </select>
+    <div className="flex flex-col h-screen overflow-hidden">
+      <Header />
+
+      <div className="flex flex-1 overflow-hidden">
+        <div className="">
+          <SideBar />
+        </div>
+
+
+        <div className="flex flex-1 flex-col p-6 overflow-auto bg-gray-100">
+          {isLoading && (
+            <div className="text-center text-lg font-semibold text-blue-600 mb-4">
+              Loading...
+            </div>
+          )}
+          <h1 className="text-2xl font-bold mb-4 mt-8 text-center">
+            Department of{" "}
+            {selectedDeprt?.department_name || selectedDeprt?.class_name}
+          </h1>
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
+            <div className="px-6 py-4 border-b ">
+              <h2 className="text-xl font-bold text-black">Fee Report</h2>
+            </div>
+
+            {/* Scrollable Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left border-collapse">
+                <thead className="bg-gray-800 text-white sticky top-0 z-10">
+                  <tr>
+                    <th className="px-5 py-3 font-semibold">Batch</th>
+                    <th className="px-5 py-3 font-semibold">Admission</th>
+                    <th className="px-5 py-3 font-semibold">College</th>
+                    <th className="px-5 py-3 font-semibold">Exam</th>
+                    <th className="px-5 py-3 font-semibold">CRF</th>
+                    <th className="px-5 py-3 font-semibold">Registration</th>
+                    <th className="px-5 py-3 font-semibold">ID Card</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {totals.length > 0 ? (
+                    totals.map((item, index) => (
+                      <tr
+                        key={index}
+                        className={`border-b hover:bg-blue-50 transition duration-150 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                          }`}
+                      >
+                        <td className="px-5 py-3 font-medium text-gray-800">
+                          {item.batch}
+                        </td>
+                        <td className="px-5 py-3 font-semibold">
+                          {item.admission}
+                        </td>
+                        <td className="px-5 py-3 font-semibold">{item.college}</td>
+                        <td className="px-5 py-3 font-semibold">{item.exam}</td>
+                        <td className="px-5 py-3 font-semibold">{item.crf}</td>
+                        <td className="px-5 py-3 font-semibold">{item.registration}</td>
+                        <td className="px-5 py-3 font-semibold">{item.idCard}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="7"
+                        className="text-center py-8 text-gray-500 font-medium"
+                      >
+                        No Data Found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        )}
-
-        {isLoading && <div>Loading...</div>}
-
-        <table>
-          <thead>
-            <tr className="tableRow border-t border-gray-300">
-              <td className="tableData font-semibold">Admission Fee</td>
-              <td className="tableData font-semibold">College Fee</td>
-              <td className="tableData font-semibold">Exam Fee</td>
-              <td className="tableData font-semibold">CR Fee</td>
-              <td className="tableData font-semibold">Registration Fee</td>
-              <td className="tableData font-semibold">ID Card Fee</td>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="tableRow">
-              <td className="tableData">{totals.admission}</td>
-              <td className="tableData">{totals.college}</td>
-              <td className="tableData">{totals.exam}</td>
-              <td className="tableData">{totals.crf}</td>
-              <td className="tableData">{totals.registration}</td>
-              <td className="tableData">{totals.idCard}</td>
-            </tr>
-          </tbody>
-        </table>
+        </div>
       </div>
     </div>
   );

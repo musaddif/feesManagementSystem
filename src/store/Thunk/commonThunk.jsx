@@ -809,7 +809,7 @@ export const getReportData = createAsyncThunk(
         feeSubmission(*)`,
         )
         .eq("department", _request?.deprt)
-        .eq("batch", _request?.batchValue);
+      // .eq("batch", _request?.batchValue);
 
       if (error) {
         return rejectWithValue(error.message);

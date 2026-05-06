@@ -11,10 +11,12 @@ import ProtectedRoute from "./ProtectedRoute";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import Report from "../pages/dashboard/report";
 import Students from "../pages/dashboard/students";
+
+
 const Layout = () => {
   return (
     <Routes>
-      <Route path="/" element={<Login />} />
+            <Route path="/" element={<Login />} />
       <Route
         path="/dashboard"
         element={
