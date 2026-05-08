@@ -5,6 +5,8 @@ import {
   getAllInterStudents,
   getSemesterStudents,
   getInterClassStudents,
+  unsubmitFee,
+  unsubmitInterFee,
 } from "../../store/Thunk/commonThunk";
 import SideBar from "../../component/sideBar";
 import "../../constant/applicationStyle.css";
@@ -16,6 +18,7 @@ import { saveAs } from "file-saver";
 import Button from "../../component/button/button";
 import { semester, inter_class } from "../../constant/lists";
 import Header from "../../component/header";
+import { TableSkeleton } from "../../component/loader/skeleton";
 
 const StudentList = () => {
   const [batchArr, setBatchArr] = useState([]);
@@ -32,6 +35,7 @@ const StudentList = () => {
   const interStudent = useSelector((state) => state.common.getAllInterStudent);
   const storedDepartment = localStorage.getItem("selectedDepartment");
   const selectedDeprt = storedDepartment ? JSON.parse(storedDepartment) : null;
+  const globalLoading = useSelector((state) => state.common.loading);
 
   // console.log("currentSemester  = ", currentSemester);
 
@@ -305,11 +309,22 @@ const StudentList = () => {
                     {loginSession?.user?.user_metadata?.role == "Admin" && (
                       <td className="tableData font-semibold">Edit</td>
                     )}
+                    {loginSession?.user?.user_metadata?.role == "Admin" && (
+                      <td className="tableData font-semibold">Unsubmit</td>
+                    )}
                   </tr>
                 </thead>
 
-                <tbody>
-                  {/* For BS students */}
+                 <tbody>
+                  {globalLoading && students?.length === 0 && interStudent?.length === 0 ? (
+                    <tr>
+                      <td colSpan="15" className="p-4">
+                        <TableSkeleton rows={10} cols={15} />
+                      </td>
+                    </tr>
+                  ) : (
+                    <>
+                      {/* For BS students */}
                   {students?.length > 0 ? (
                     students.map((student, index) => (
                       <tr className="tableRow" key={index}>
@@ -407,6 +422,40 @@ const StudentList = () => {
                               </button>
                             </td>
                           )}
+                        {loginSession?.user?.user_metadata?.role === "Admin" &&
+                          student.feeSubmission?.[0]?.registration_number && (
+                            <td>
+                              <button
+                                onClick={() => {
+                                  if (window.confirm("Are you sure you want to unsubmit this fee? This will reverse the posted amount from the account balance.")) {
+                                    dispatch(
+                                      unsubmitFee({
+                                        registrationNumber: student.registration_number,
+                                        studentSemester: currentSemester,
+                                      })
+                                    )
+                                      .unwrap()
+                                      .then(() => {
+                                        alert("Fee unsubmitted successfully!");
+                                        dispatch(
+                                          getSemesterStudents({
+                                            deprt: selectedDepartment?.department_name,
+                                            currentSemester: currentSemester,
+                                            batchValue: batchValue,
+                                          })
+                                        );
+                                      })
+                                      .catch((err) =>
+                                        alert(err || "Failed to unsubmit fee")
+                                      );
+                                  }
+                                }}
+                                className="text-red-600 underline px-3 py-1 rounded-md hover:text-red-800 transition"
+                              >
+                                Unsubmit
+                              </button>
+                            </td>
+                          )}
                       </tr>
                     ))
                   ) : interStudent?.length > 0 ? (
@@ -497,6 +546,41 @@ const StudentList = () => {
                               </button>
                             </td>
                           )}
+                        {loginSession?.user?.user_metadata?.role === "Admin" &&
+                          student.feeSubmission?.[0]
+                            ?.inter_student_registration && (
+                            <td>
+                              <button
+                                onClick={() => {
+                                  if (window.confirm("Are you sure you want to unsubmit this fee? This will reverse the posted amount from the account balance.")) {
+                                    dispatch(
+                                      unsubmitInterFee({
+                                        registrationNumber: student.inter_student_registration,
+                                        interClass: interClass,
+                                      })
+                                    )
+                                      .unwrap()
+                                      .then(() => {
+                                        alert("Fee unsubmitted successfully!");
+                                        dispatch(
+                                          getInterClassStudents({
+                                            deprt: selectedDepartment?.class_name,
+                                            interClass: interClass,
+                                            batchValue: batchValue,
+                                          })
+                                        );
+                                      })
+                                      .catch((err) =>
+                                        alert(err || "Failed to unsubmit fee")
+                                      );
+                                  }
+                                }}
+                                className="text-red-600 underline px-3 py-1 rounded-md hover:text-red-800 transition"
+                              >
+                                Unsubmit
+                              </button>
+                            </td>
+                          )}
                       </tr>
                     ))
                   ) : (
@@ -508,6 +592,8 @@ const StudentList = () => {
                         No students found
                       </td>
                     </tr>
+                  )}
+                    </>
                   )}
                 </tbody>
               </table>

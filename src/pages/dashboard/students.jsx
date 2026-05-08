@@ -11,6 +11,7 @@ import "../style/excelFileReader.css";
 import { useNavigate } from "react-router-dom";
 import { semester, inter_class } from "../../constant/lists";
 import Header from "../../component/Header"
+import { Skeleton } from "../../component/loader/skeleton";
 
 const Students = () => {
   const [studentSemester, setStudentSemester] = useState("All");
@@ -31,6 +32,7 @@ const Students = () => {
   const selectedDeprt = storedDepartment ? JSON.parse(storedDepartment) : null;
   const bsStudents = useSelector((state) => state.common.getAllStudent);
   const interStudents = useSelector((state) => state.common.getAllInterStudent);
+  const globalLoading = useSelector((state) => state.common.loading);
   useEffect(() => {
     const loadBatches = async () => {
       try {
@@ -200,9 +202,14 @@ const Students = () => {
             {selectedDeprt?.department_name || selectedDeprt?.class_name}
           </h1>
           <div className="max-w-3xl mx-auto">
-            {batchArr
-              .sort((a, b) => Number(b) - Number(a))
-              .map((batch) => {
+            {globalLoading && batchArr.length === 0 ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full mb-3" />
+              ))
+            ) : (
+              batchArr
+                .sort((a, b) => Number(b) - Number(a))
+                .map((batch) => {
                 const studentsInBatch = students.filter(
                   (student) => student.batch === batch,
                 );
@@ -409,7 +416,8 @@ const Students = () => {
                     )}
                   </div>
                 );
-              })}
+              })
+            )}
           </div>
         </div>
       </div>  </div>

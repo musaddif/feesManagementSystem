@@ -133,8 +133,13 @@ const Login = () => {
           </label> */}
         </div>
 
-        <Button className="" onClick={handleLogin} disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
+        <Button 
+          className="" 
+          onClick={handleLogin} 
+          loading={loading} 
+          loadingText="Logging in..."
+        >
+          Login
         </Button>
 
         {/* <button onClick={handleSignUp}>signUp</button> */}

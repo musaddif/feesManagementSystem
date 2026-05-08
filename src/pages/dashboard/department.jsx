@@ -7,6 +7,7 @@ import { intermediateList } from "../../constant/lists";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { allDepartments, getFScdeprt } from "../../store/Thunk/commonThunk";
+import { Skeleton } from "../../component/loader/skeleton";
 
 const Department = () => {
   const location = useLocation();
@@ -15,6 +16,7 @@ const Department = () => {
   const dispatch = useDispatch();
   const allDepartment = useSelector((state) => state.common.department);
   const FScDepartment = useSelector((state) => state.common.interDepartments);
+  const globalLoading = useSelector((state) => state.common.loading);
   // console.log("FScDepartment = ", FScDepartment);
 
   const handleNavigation = (type) => {
@@ -35,15 +37,21 @@ const Department = () => {
           <h1 className="text-2xl font-bold">Department</h1>
           <div className="flex flex-wrap flex-row gap-4 justify-center">
             {/* {departmentList.map((dept, index) => ( */}
-            {allDepartment?.map((dept, index) => (
-              <Button
-                key={index}
-                onClick={() => handleNavigation(dept)}
-                className=""
-              >
-                {dept?.department_name}
-              </Button>
-            ))}
+            {globalLoading && allDepartment?.length === 0 ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-48" />
+              ))
+            ) : (
+              allDepartment?.map((dept, index) => (
+                <Button
+                  key={index}
+                  onClick={() => handleNavigation(dept)}
+                  className=""
+                >
+                  {dept?.department_name}
+                </Button>
+              ))
+            )}
           </div>
         </div>
       ) : (
@@ -51,15 +59,21 @@ const Department = () => {
         <div className="container">
           <h1 className="text-2xl font-bold">Intermediate</h1>
           <div className="flex flex-wrap flex-row gap-4 justify-center">
-            {FScDepartment.map((inter, index) => (
-              <Button
-                key={index}
-                onClick={() => handleNavigation(inter)}
-                className=""
-              >
-                {inter?.class_name}
-              </Button>
-            ))}
+            {globalLoading && FScDepartment?.length === 0 ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-48" />
+              ))
+            ) : (
+              FScDepartment.map((inter, index) => (
+                <Button
+                  key={index}
+                  onClick={() => handleNavigation(inter)}
+                  className=""
+                >
+                  {inter?.class_name}
+                </Button>
+              ))
+            )}
           </div>
         </div>
       )}

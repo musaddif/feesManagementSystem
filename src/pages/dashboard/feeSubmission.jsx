@@ -21,11 +21,13 @@ import ExcelFileReader from "./excelFileReader";
 import SideBar from "../../component/sideBar";
 import { semester, inter_class } from "../../constant/lists";
 import Header from "../../component/header";
+import { Skeleton } from "../../component/loader/skeleton";
 
 const FeeSubmission = () => {
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [checkedItems, setCheckedItems] = useState({});
   const [totalFee, setTotalFee] = useState(0);
+  const [eligibleAmount, setEligibleAmount] = useState(0);
   const [message, setMessage] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [studentList, setStudentList] = useState([]);
@@ -44,6 +46,7 @@ const FeeSubmission = () => {
   const storedDepartment = localStorage.getItem("selectedDepartment");
   const selectedDeprt = storedDepartment ? JSON.parse(storedDepartment) : null;
   const feesList = useSelector((state) => state.common.fees);
+  const globalLoading = useSelector((state) => state.common.loading);
   useEffect(() => {
     dispatch(
       getInterStudent({
@@ -132,18 +135,27 @@ const FeeSubmission = () => {
     }
   }, []);
 
+  // Fee keys that are eligible to affect the account balance
+  const ELIGIBLE_FEE_KEYS = ["admission_fee", "college_fee", "id_card_fee", "registration_fee"];
+
   const handleCheckBoxes = (e) => {
     const { name, checked } = e.target;
     setCheckedItems((prev) => {
       const updated = { ...prev, [name]: checked };
 
       let newTotal = 0;
+      let newEligible = 0;
       Object.keys(feesList[0]).forEach((key) => {
         if (updated[key]) {
-          newTotal += Number(feesList[0][key]);
+          const amount = Number(feesList[0][key]);
+          newTotal += amount;
+          if (ELIGIBLE_FEE_KEYS.includes(key)) {
+            newEligible += amount;
+          }
         }
       });
       setTotalFee(newTotal);
+      setEligibleAmount(newEligible);
       return updated;
     });
   };
@@ -179,6 +191,7 @@ const FeeSubmission = () => {
       totalFee,
       registrationNumber,
       studentSemester,
+      eligibleAmount,
     };
 
     if (selectedDeprt?.study_level == "BS") {
@@ -186,6 +199,7 @@ const FeeSubmission = () => {
         .then((result) => {
           if (result.payload?.success) {
             setTotalFee(0);
+            setEligibleAmount(0);
             setCheckedItems({});
             setRegistrationNumber("");
             setStudentSemester("");
@@ -203,11 +217,13 @@ const FeeSubmission = () => {
         totalFee,
         registrationNumber,
         interClass,
+        eligibleAmount,
       };
       dispatch(interSubmitFees(interFormData))
         .then((result) => {
           if (result.payload?.success) {
             setTotalFee(0);
+            setEligibleAmount(0);
             setCheckedItems({});
             setRegistrationNumber("");
             setMessage("Data insertion successful!");
@@ -237,6 +253,7 @@ const FeeSubmission = () => {
       totalFee,
       registrationNumber,
       studentSemester,
+      eligibleAmount,
     };
 
     if (selectedDeprt?.study_level == "BS") {
@@ -257,6 +274,7 @@ const FeeSubmission = () => {
         totalFee,
         registrationNumber,
         interClass,
+        eligibleAmount,
       };
       // console.log("data to be updated = ", formData);
 
@@ -264,6 +282,7 @@ const FeeSubmission = () => {
         .then((result) => {
           if (result.payload?.success) {
             setTotalFee(0);
+            setEligibleAmount(0);
             setCheckedItems({});
             setRegistrationNumber("");
             setMessage("Data insertion successful!");
@@ -317,137 +336,159 @@ const FeeSubmission = () => {
                 selectedDepartment?.class_name}
             </h2>
 
-            <div className="flex flex-row gap-2 w-full items-center justify-center">
-              <label>Batch:</label>
-              <select
-                className="dropDown"
-                onChange={handleBatch}
-                value={batchValue}
-              >
-                {[...new Set(getstudentList.map((item) => item.batch))].map(
-                  (batch) => (
-                    <option key={batch} value={batch}>
-                      {batch}
+            {globalLoading && feesList.length === 0 ? (
+              <div className="w-full space-y-4 p-6">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-row gap-2 w-full items-center justify-center">
+                  <label>Batch:</label>
+                  <select
+                    className="dropDown"
+                    onChange={handleBatch}
+                    value={batchValue}
+                  >
+                    {[...new Set(getstudentList.map((item) => item.batch))].map(
+                      (batch) => (
+                        <option key={batch} value={batch}>
+                          {batch}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                  <label className="">Registration No:</label>
+                  <select
+                    className="dropDown mr-6"
+                    onChange={(e) => setRegistrationNumber(e.target.value)}
+                    value={registrationNumber}
+                  >
+                    <option value="" disabled>
+                      Select a Reg.No:
                     </option>
-                  ),
+                    {studentList.map((item, index) => (
+                      <option
+                        key={index}
+                        value={
+                          selectedDeprt?.study_level === "BS"
+                            ? item.registration_number
+                            : item.inter_student_registration
+                        }
+                      >
+                        {selectedDeprt?.study_level === "BS"
+                          ? item.registration_number
+                          : item.inter_student_registration}
+                      </option>
+                    ))}
+                  </select>
+
+                  {selectedDeprt?.study_level === "BS" ? (
+                    <>
+                      <label className="">Semester</label>
+                      <select
+                        className="dropDown mr-6"
+                        onChange={(e) => setStudentSemester(e.target.value)}
+                        value={studentSemester}
+                      >
+                        <option value="" disabled>
+                          Semester
+                        </option>
+                        {semester.map((item, index) => (
+                          <option key={index} value={item}>
+                            {item}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  ) : (
+                    <>
+                      <label className="">Class</label>
+                      <select
+                        className="dropDown mr-6"
+                        onChange={(e) => setInterClass(e.target.value)}
+                        value={interClass}
+                      >
+                        <option value="" disabled>
+                          Class
+                        </option>
+                        {inter_class.map((item, index) => (
+                          <option key={index} value={item}>
+                            {item}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-4 justify-center items-center w-full mb-4">
+                  {feeKeys.map(
+                    (key) =>
+                      !getStudentData?.[key] && (
+                        // Skip rendering id_card_fee for specific semesters
+                        !(key === "id_card_fee" && studentSemester && ["2nd", "4th", "6th", "8th", "10th"].includes(studentSemester)) && (
+                          <div key={key} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id={key}
+                              name={key}
+                              checked={!!checkedItems[key]}
+                              onChange={handleCheckBoxes}
+                            />
+                            <label htmlFor={key} className="capitalize">
+                              {key.replace(/_/g, " ")}
+                            </label>
+                          </div>
+                        )
+                      ),
+                  )}
+                </div>
+
+                {/* Total Fee Display */}
+                <div className="flex flex-row gap-6 w-full items-center justify-center  ">
+                  <label className="">Total Fee:</label>
+                  <input
+                    type="text"
+                    value={totalFee?.toLocaleString()}
+                    disabled={true}
+                    className="rollnoInput"
+                  />
+                </div>
+                {message && (
+                  <p
+                    style={{
+                      margin: "20px",
+                      color: message.includes("successful") ? "green" : "red",
+                      textAlign: "center",
+                    }}
+                  >
+                    {message}
+                  </p>
                 )}
-              </select>
-              <label className="">Registration No:</label>
-              <select
-                className="dropDown mr-6"
-                onChange={(e) => setRegistrationNumber(e.target.value)}
-                value={registrationNumber}
-              >
-                <option value="" disabled>
-                  Select a Reg.No:
-                </option>
-                {studentList.map((item, index) => (
-                  <option
-                    key={index}
-                    value={
-                      selectedDeprt?.study_level === "BS"
-                        ? item.registration_number
-                        : item.inter_student_registration
-                    }
-                  >
-                    {selectedDeprt?.study_level === "BS"
-                      ? item.registration_number
-                      : item.inter_student_registration}
-                  </option>
-                ))}
-              </select>
-
-              {selectedDeprt?.study_level === "BS" ? (
-                <>
-                  <label className="">Semester</label>
-                  <select
-                    className="dropDown mr-6"
-                    onChange={(e) => setStudentSemester(e.target.value)}
-                    value={studentSemester}
-                  >
-                    <option value="" disabled>
-                      Semester
-                    </option>
-                    {semester.map((item, index) => (
-                      <option key={index} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              ) : (
-                <>
-                  <label className="">Class</label>
-                  <select
-                    className="dropDown mr-6"
-                    onChange={(e) => setInterClass(e.target.value)}
-                    value={interClass}
-                  >
-                    <option value="" disabled>
-                      Class
-                    </option>
-                    {inter_class.map((item, index) => (
-                      <option key={index} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-4 justify-center items-center w-full mb-4">
-              {feeKeys.map(
-                (key) =>
-                  !getStudentData?.[key] && (
-                    // Skip rendering id_card_fee for specific semesters
-                    !(key === "id_card_fee" && studentSemester && ["2nd", "4th", "6th", "8th", "10th"].includes(studentSemester)) && (
-                      <div key={key} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id={key}
-                          name={key}
-                          checked={!!checkedItems[key]}
-                          onChange={handleCheckBoxes}
-                        />
-                        <label htmlFor={key} className="capitalize">
-                          {key.replace(/_/g, " ")}
-                        </label>
-                      </div>
-                    )
-                  ),
-              )}
-            </div>
-
-            {/* Total Fee Display */}
-            <div className="flex flex-row gap-6 w-full items-center justify-center  ">
-              <label className="">Total Fee:</label>
-              <input
-                type="text"
-                value={totalFee?.toLocaleString()}
-                disabled={true}
-                className="rollnoInput"
-              />
-            </div>
-            {message && (
-              <p
-                style={{
-                  margin: "20px",
-                  color: message.includes("successful") ? "green" : "red",
-                  textAlign: "center",
-                }}
-              >
-                {message}
-              </p>
+                <div className="flex flex-row gap-3">
+                  {(studentRecord && Object.keys(studentRecord).length > 0) ||
+                    Object.keys(getStudentData || {}).length > 0 ? (
+                    <Button
+                      onClick={updateRecord}
+                      loading={globalLoading}
+                      loadingText="Updating..."
+                    >
+                      Update Fee
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={feeSubmit}
+                      loading={globalLoading}
+                      loadingText="Submitting..."
+                    >
+                      Submit Fee
+                    </Button>
+                  )}
+                </div>
+              </>
             )}
-            <div className="flex flex-row gap-3">
-              {(studentRecord && Object.keys(studentRecord).length > 0) ||
-                Object.keys(getStudentData || {}).length > 0 ? (
-                <Button onClick={updateRecord}>Update Fee</Button>
-              ) : (
-                <Button onClick={feeSubmit}>Submit Fee</Button>
-              )}
-            </div>
           </div>
         </div>
       </div></div>

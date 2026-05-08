@@ -13,6 +13,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import "../../constant/applicationStyle.css";
 import "../style/excelFileReader.css";
 import Header from "../../component/header";
+import { TableSkeleton } from "../../component/loader/skeleton";
 
 const Report = () => {
   const [batchArr, setBatchArr] = useState([]);
@@ -198,11 +199,6 @@ const Report = () => {
 
 
         <div className="flex flex-1 flex-col p-6 overflow-auto bg-gray-100">
-          {isLoading && (
-            <div className="text-center text-lg font-semibold text-blue-600 mb-4">
-              Loading...
-            </div>
-          )}
           <h1 className="text-2xl font-bold mb-4 mt-8 text-center">
             Department of{" "}
             {selectedDeprt?.department_name || selectedDeprt?.class_name}
@@ -228,7 +224,13 @@ const Report = () => {
                 </thead>
 
                 <tbody>
-                  {totals.length > 0 ? (
+                  {isLoading && totals.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="p-4">
+                        <TableSkeleton rows={5} cols={7} />
+                      </td>
+                    </tr>
+                  ) : totals.length > 0 ? (
                     totals.map((item, index) => (
                       <tr
                         key={index}

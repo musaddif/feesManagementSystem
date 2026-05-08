@@ -5,6 +5,7 @@ import Header from "../../component/header";
 import Button from "../../component/button/button";
 import { fetchTotalAmount, fetchTransactions, addMoneyThunk, addExpenseThunk } from "../../store/Thunk/amountThunk";
 import "../style/amountManagement.css";
+import { Skeleton, TableSkeleton } from "../../component/loader/skeleton";
 
 const AmountManagement = () => {
   const dispatch = useDispatch();
@@ -88,7 +89,11 @@ const AmountManagement = () => {
           {/* Total Balance Card */}
           <div className="balance-card">
             <span className="text-lg opacity-80">Current Total Balance</span>
-            <div className="balance-amount">Rs. {totalAmount.toLocaleString()}</div>
+            {loading && totalAmount === 0 ? (
+              <Skeleton className="h-10 w-48 mt-2" />
+            ) : (
+              <div className="balance-amount">Rs. {totalAmount.toLocaleString()}</div>
+            )}
           </div>
 
           {/* Tabs */}
@@ -194,8 +199,13 @@ const AmountManagement = () => {
                 </div>
               )}
 
-              <Button type="submit" disabled={loading} className="w-full mt-4  ">
-                {loading ? "Processing..." : activeTab === "add-money" ? "Add Money" : "Record Expense"}
+              <Button 
+                type="submit" 
+                loading={loading} 
+                loadingText="Processing..."
+                className="w-full mt-4"
+              >
+                {activeTab === "add-money" ? "Add Money" : "Record Expense"}
               </Button>
             </form>
           </div>
@@ -215,7 +225,13 @@ const AmountManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {transactions.length > 0 ? (
+                {loading && transactions.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="p-4">
+                      <TableSkeleton rows={5} cols={6} />
+                    </td>
+                  </tr>
+                ) : transactions.length > 0 ? (
                   transactions.map((t) => (
                     <tr key={t.id}>
                       <td>{new Date(t.created_at).toLocaleDateString()}</td>

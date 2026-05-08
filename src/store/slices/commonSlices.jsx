@@ -10,6 +10,8 @@ const initialState = {
   getAllInterStudent: [],
   financeReport: [],
   reportData: [],
+  loading: false,
+  error: null,
 };
 
 export const commonSlice = createSlice({
@@ -57,6 +59,14 @@ export const commonSlice = createSlice({
       ...state,
       reportData: action.payload,
     }),
+    setLoading: (state, action) => ({
+      ...state,
+      loading: action.payload,
+    }),
+    setError: (state, action) => ({
+      ...state,
+      error: action.payload,
+    }),
   },
 });
 
@@ -71,5 +81,7 @@ export const {
   getFeeSlice,
   interDeprt,
   setReportData,
+  setLoading,
+  setError,
 } = commonSlice.actions;
 export default commonSlice.reducer;

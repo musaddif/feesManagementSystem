@@ -36,7 +36,7 @@ const AdminDashboard = () => {
     dispatch(allDepartments());
   }, []);
   const allDepartment = useSelector((state) => state.common.department);
-  //   console.log("deprt", allDepartment);
+  const globalLoading = useSelector((state) => state.common.loading);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -44,7 +44,6 @@ const AdminDashboard = () => {
       deprt: department,
       fees: fees,
     };
-    // console.log("data", data);
     dispatch(setFee(data));
   };
 
@@ -54,16 +53,19 @@ const AdminDashboard = () => {
         <h1 className="m-4 font-semibold">Set Fee</h1>
 
         <select
-          value={department ? JSON.stringify(department) : ""}
+          value={department && Object.keys(department).length > 0 ? JSON.stringify(department) : ""}
           className="dropdown"
           onChange={(e) => {
-            const selected = JSON.parse(e.target.value);
-            setDepartment(selected);
+            try {
+              const selected = JSON.parse(e.target.value);
+              setDepartment(selected);
+            } catch (err) {
+              setDepartment({});
+            }
           }}
         >
-          <option>select department</option>
+          <option value="">{globalLoading ? "Loading departments..." : "select department"}</option>
           {allDepartment.map((deprt, index) => (
-            // <option key={index}>{deprt?.department_name}</option>
             <option
               key={index}
               value={JSON.stringify({
@@ -90,11 +92,14 @@ const AdminDashboard = () => {
             </div>
           ))}
         </div>
-        <div className="gap-2 flex">
-          <Button>Submit</Button>
+        <div className="gap-2 flex mt-4">
+          <Button type="submit" loading={globalLoading} loadingText="Saving...">
+            Submit
+          </Button>
           <button
+            type="button"
             onClick={() => navigate("/dashboard")}
-            className="text-gray-500"
+            className="text-gray-500 hover:text-gray-700 ml-4"
           >
             Skip
           </button>
