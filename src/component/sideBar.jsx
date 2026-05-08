@@ -52,9 +52,8 @@ const SideBar = () => {
           </Link>
         </li>
         <li
-          className={`hover:text-gray-300 cursor-pointer font-semibold ${
-            path.includes("/excelReader") ? "text-black" : ""
-          }`}
+          className={`hover:text-gray-300 cursor-pointer font-semibold ${path.includes("/excelReader") ? "text-black" : ""
+            }`}
         >
           <Link to="/excelReader" className="flex flex-row gap-2">
             <FaUserPlus size={20} />
@@ -62,9 +61,8 @@ const SideBar = () => {
           </Link>
         </li>
         <li
-          className={`hover:text-gray-300 cursor-pointer font-semibold ${
-            path.includes("/feeSubmission") ? "text-black" : ""
-          }`}
+          className={`hover:text-gray-300 cursor-pointer font-semibold ${path.includes("/feeSubmission") ? "text-black" : ""
+            }`}
         >
           <Link to="/feeSubmission" className="flex flex-row gap-2">
             <FaMoneyBillWave size={20} />
@@ -73,13 +71,12 @@ const SideBar = () => {
         </li>
 
         <li
-          className={` hover:text-gray-300 cursor-pointer font-semibold flex flex-row gap-2 ${
-            path.includes("/studentList") ? "text-black" : ""
-          }`}
+          className={` hover:text-gray-300 cursor-pointer font-semibold flex flex-row gap-2 ${path.includes("/studentList") ? "text-black" : ""
+            }`}
         >
           <Link to="/studentList" className="flex flex-row gap-2">
             <FaListUl size={20} />
-            List Students
+            Report
           </Link>
         </li>
         <li
@@ -92,7 +89,7 @@ const SideBar = () => {
             Amount
           </Link>
         </li>
-        <li
+        {/* <li
           className={`hover:text-gray-300 cursor-pointer font-semibold flex flex-row gap-2
         ${path.includes("/report") ? "text-black" : ""}
         `}
@@ -101,7 +98,7 @@ const SideBar = () => {
             <FaClipboardList size={20} />
             Report
           </Link>
-        </li>
+        </li> */}
 
         <li className="hover:text-gray-300 cursor-pointer font-semibold flex flex-row gap-2  ">
           <FaSignOutAlt size={20} />

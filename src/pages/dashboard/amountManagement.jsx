@@ -9,7 +9,7 @@ import { Skeleton, TableSkeleton } from "../../component/loader/skeleton";
 
 const AmountManagement = () => {
   const dispatch = useDispatch();
-  const { totalAmount, transactions, loading } = useSelector((state) => state.amount);
+  const { totalAmount, cashInHand, transactions, loading } = useSelector((state) => state.amount);
   const [activeTab, setActiveTab] = useState("add-money");
 
   // Form States
@@ -86,14 +86,27 @@ const AmountManagement = () => {
         <div className="flex-1 overflow-y-auto amount-management-container  ">
           <h1 className="text-2xl font-bold mb-6 text-center">Amount Management</h1>
 
-          {/* Total Balance Card */}
-          <div className="balance-card">
-            <span className="text-lg opacity-80">Current Total Balance</span>
-            {loading && totalAmount === 0 ? (
-              <Skeleton className="h-10 w-48 mt-2" />
-            ) : (
-              <div className="balance-amount">Rs. {totalAmount.toLocaleString()}</div>
-            )}
+          {/* Dashboard Summary Cards */}
+          <div className="flex flex-col md:flex-row gap-6 mb-8">
+            {/* Total Balance Card */}
+            <div className="balance-card flex-1">
+              <span className="text-lg opacity-80">Total Balance</span>
+              {loading && totalAmount === 0 ? (
+                <Skeleton className="h-10 w-48 mt-2" />
+              ) : (
+                <div className="balance-amount">Rs. {totalAmount.toLocaleString()}</div>
+              )}
+            </div>
+
+            {/* Cash in Hand Card */}
+            <div className="balance-card flex-1" style={{ background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)" }}>
+              <span className="text-lg opacity-80">Cash in Hand</span>
+              {loading && cashInHand === 0 ? (
+                <Skeleton className="h-10 w-48 mt-2" />
+              ) : (
+                <div className="balance-amount">Rs. {cashInHand.toLocaleString()}</div>
+              )}
+            </div>
           </div>
 
           {/* Tabs */}
@@ -102,13 +115,13 @@ const AmountManagement = () => {
               className={`tab-button ${activeTab === "add-money" ? "active" : ""}`}
               onClick={() => { setActiveTab("add-money"); resetForm(); }}
             >
-              Add Money
+              Earned
             </div>
             <div
               className={`tab-button ${activeTab === "expense" ? "active" : ""}`}
               onClick={() => { setActiveTab("expense"); resetForm(); }}
             >
-              Record Expense
+              Make Payment
             </div>
           </div>
 
@@ -199,13 +212,13 @@ const AmountManagement = () => {
                 </div>
               )}
 
-              <Button 
-                type="submit" 
-                loading={loading} 
+              <Button
+                type="submit"
+                loading={loading}
                 loadingText="Processing..."
                 className="w-full mt-4"
               >
-                {activeTab === "add-money" ? "Add Money" : "Record Expense"}
+                {activeTab === "add-money" ? "Earned" : "Make Payment"}
               </Button>
             </form>
           </div>

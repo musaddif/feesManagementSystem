@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { supabase } from "../../supabaseClient";
-import { setTotalAmount, setTransactions, setLoading, setError } from "../slices/amountSlice";
+import { setTotalAmount, setCashInHand, setTransactions, setLoading, setError } from "../slices/amountSlice";
 
 export const fetchTotalAmount = createAsyncThunk(
   "amount/fetchTotalAmount",
@@ -9,12 +9,13 @@ export const fetchTotalAmount = createAsyncThunk(
       dispatch(setLoading(true));
       const { data, error } = await supabase
         .from("amount_summary")
-        .select("total_amount")
+        .select("total_amount, cash_in_hand")
         .single();
 
       if (error) throw error;
       dispatch(setTotalAmount(data.total_amount));
-      return data.total_amount;
+      dispatch(setCashInHand(data.cash_in_hand));
+      return data;
     } catch (err) {
       dispatch(setError(err.message));
       return rejectWithValue(err.message);

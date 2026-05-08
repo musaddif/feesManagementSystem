@@ -89,6 +89,7 @@ export const submitFees = createAsyncThunk(
         p_fee_type: feeData?.checkedItems,
         p_semester: feeData?.studentSemester,
         p_eligible_amount: feeData?.eligibleAmount || 0,
+        p_cash_in_hand_amount: feeData?.cashInHandAmount || 0,
       });
 
       if (error) {
@@ -132,6 +133,7 @@ export const interSubmitFees = createAsyncThunk(
         p_fee_type: feeData?.checkedItems,
         p_semester: feeData?.interClass,
         p_eligible_amount: feeData?.eligibleAmount || 0,
+        p_cash_in_hand_amount: feeData?.cashInHandAmount || 0,
       });
 
       if (error) {
@@ -514,7 +516,6 @@ export const getInterStudent = createAsyncThunk(
       dispatch(setLoading(true));
       const { data, error } = await supabase
         .from("interStudent")
-        .from("interStudent")
         .select(`feeSubmission(*)`)
         .eq("inter_student_registration", _request?.registrationNumber)
         .eq("feeSubmission.semester", _request?.interClass);
@@ -616,7 +617,7 @@ export const updateFee = createAsyncThunk(
   async (_request, { dispatch, rejectWithValue }) => {
     try {
       dispatch(setLoading(true));
-      const { registrationNumber, checkedItems, totalFee, studentSemester, eligibleAmount } =
+      const { registrationNumber, checkedItems, totalFee, studentSemester, eligibleAmount, cashInHandAmount } =
         _request;
 
       const { data: existing, error: fetchError } = await supabase
@@ -675,6 +676,7 @@ export const updateFee = createAsyncThunk(
           p_fee_type: mergedFeeType,
           p_semester: studentSemester,
           p_new_eligible_amount: eligibleAmount || 0,
+          p_new_cash_in_hand_amount: cashInHandAmount || 0,
         });
 
         if (error) throw error;
@@ -688,6 +690,7 @@ export const updateFee = createAsyncThunk(
           p_fee_type: newTrueFees,
           p_semester: studentSemester,
           p_eligible_amount: eligibleAmount || 0,
+          p_cash_in_hand_amount: cashInHandAmount || 0,
         });
 
         if (error) throw error;
@@ -725,6 +728,7 @@ export const updateInterFee = createAsyncThunk(
         totalFee,
         interClass,
         eligibleAmount,
+        cashInHandAmount,
       } = _request;
 
       const { data: existing, error: fetchError } = await supabase
@@ -761,6 +765,7 @@ export const updateInterFee = createAsyncThunk(
           p_fee_type: mergedFeeType,
           p_semester: interClass,
           p_new_eligible_amount: eligibleAmount || 0,
+          p_new_cash_in_hand_amount: cashInHandAmount || 0,
         });
 
         if (error) throw error;
@@ -774,6 +779,7 @@ export const updateInterFee = createAsyncThunk(
           p_fee_type: newTrueFees,
           p_semester: interClass,
           p_eligible_amount: eligibleAmount || 0,
+          p_cash_in_hand_amount: cashInHandAmount || 0,
         });
 
         if (error) throw error;

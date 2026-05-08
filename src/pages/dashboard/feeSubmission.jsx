@@ -23,11 +23,16 @@ import { semester, inter_class } from "../../constant/lists";
 import Header from "../../component/header";
 import { Skeleton } from "../../component/loader/skeleton";
 
+// Fee keys categorization
+const ELIGIBLE_FEE_KEYS = ["admission_fee", "college_fee", "id_card_fee"];
+const CASH_IN_HAND_KEYS = ["exam_fee", "CRF", "crf", "registration_fee"];
+
 const FeeSubmission = () => {
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [checkedItems, setCheckedItems] = useState({});
   const [totalFee, setTotalFee] = useState(0);
   const [eligibleAmount, setEligibleAmount] = useState(0);
+  const [cashInHandAmount, setCashInHandAmount] = useState(0);
   const [message, setMessage] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [studentList, setStudentList] = useState([]);
@@ -110,10 +115,36 @@ const FeeSubmission = () => {
       setBatchValue(studentRecord?.batch);
       setStudentSemester(studentRecord?.feeSubmission?.[0]?.semester);
       setInterClass(studentRecord?.inter?.class_name);
-      setCheckedItems(studentRecord?.feeSubmission?.[0]?.fee_type || {});
-      setTotalFee(studentRecord?.feeSubmission?.[0]?.amount);
+      const feeType = studentRecord?.feeSubmission?.[0]?.fee_type || {};
+      setCheckedItems(feeType);
+      setTotalFee(studentRecord?.feeSubmission?.[0]?.amount || 0);
     }
   }, [studentRecord, updateFee]);
+
+  // Dedicated effect to handle amount recalculation when fee definitions (feesList) or checked items change
+  useEffect(() => {
+    if (!feesList || feesList.length === 0) return;
+
+    let loadedEligible = 0;
+    let loadedCash = 0;
+    let loadedTotal = 0;
+
+    Object.keys(feesList[0]).forEach((key) => {
+      if (checkedItems[key]) {
+        const amount = Number(feesList[0][key]) || 0;
+        loadedTotal += amount;
+        if (ELIGIBLE_FEE_KEYS.includes(key)) loadedEligible += amount;
+        if (CASH_IN_HAND_KEYS.includes(key)) loadedCash += amount;
+      }
+    });
+
+    setEligibleAmount(loadedEligible);
+    setCashInHandAmount(loadedCash);
+    // Only set total fee if it's currently 0 (initial load) to avoid fighting with manual inputs
+    if (totalFee === 0 && loadedTotal > 0) {
+      setTotalFee(loadedTotal);
+    }
+  }, [feesList, checkedItems, ELIGIBLE_FEE_KEYS, CASH_IN_HAND_KEYS]);
 
   let getstudentList;
   {
@@ -135,8 +166,7 @@ const FeeSubmission = () => {
     }
   }, []);
 
-  // Fee keys that are eligible to affect the account balance
-  const ELIGIBLE_FEE_KEYS = ["admission_fee", "college_fee", "id_card_fee", "registration_fee"];
+
 
   const handleCheckBoxes = (e) => {
     const { name, checked } = e.target;
@@ -145,6 +175,7 @@ const FeeSubmission = () => {
 
       let newTotal = 0;
       let newEligible = 0;
+      let newCash = 0;
       Object.keys(feesList[0]).forEach((key) => {
         if (updated[key]) {
           const amount = Number(feesList[0][key]);
@@ -152,10 +183,14 @@ const FeeSubmission = () => {
           if (ELIGIBLE_FEE_KEYS.includes(key)) {
             newEligible += amount;
           }
+          if (CASH_IN_HAND_KEYS.includes(key)) {
+            newCash += amount;
+          }
         }
       });
       setTotalFee(newTotal);
       setEligibleAmount(newEligible);
+      setCashInHandAmount(newCash);
       return updated;
     });
   };
@@ -192,6 +227,7 @@ const FeeSubmission = () => {
       registrationNumber,
       studentSemester,
       eligibleAmount,
+      cashInHandAmount,
     };
 
     if (selectedDeprt?.study_level == "BS") {
@@ -200,6 +236,7 @@ const FeeSubmission = () => {
           if (result.payload?.success) {
             setTotalFee(0);
             setEligibleAmount(0);
+            setCashInHandAmount(0);
             setCheckedItems({});
             setRegistrationNumber("");
             setStudentSemester("");
@@ -218,12 +255,14 @@ const FeeSubmission = () => {
         registrationNumber,
         interClass,
         eligibleAmount,
+        cashInHandAmount,
       };
       dispatch(interSubmitFees(interFormData))
         .then((result) => {
           if (result.payload?.success) {
             setTotalFee(0);
             setEligibleAmount(0);
+            setCashInHandAmount(0);
             setCheckedItems({});
             setRegistrationNumber("");
             setMessage("Data insertion successful!");
@@ -254,6 +293,7 @@ const FeeSubmission = () => {
       registrationNumber,
       studentSemester,
       eligibleAmount,
+      cashInHandAmount,
     };
 
     if (selectedDeprt?.study_level == "BS") {
@@ -275,6 +315,7 @@ const FeeSubmission = () => {
         registrationNumber,
         interClass,
         eligibleAmount,
+        cashInHandAmount,
       };
       // console.log("data to be updated = ", formData);
 
@@ -283,6 +324,7 @@ const FeeSubmission = () => {
           if (result.payload?.success) {
             setTotalFee(0);
             setEligibleAmount(0);
+            setCashInHandAmount(0);
             setCheckedItems({});
             setRegistrationNumber("");
             setMessage("Data insertion successful!");
