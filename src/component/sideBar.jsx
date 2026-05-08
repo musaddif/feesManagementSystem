@@ -4,6 +4,7 @@ import {
   FaListUl,
   FaClipboardList,
   FaSignOutAlt,
+  FaWallet,
 } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Button from "./button/button";
@@ -79,6 +80,16 @@ const SideBar = () => {
           <Link to="/studentList" className="flex flex-row gap-2">
             <FaListUl size={20} />
             List Students
+          </Link>
+        </li>
+        <li
+          className={`hover:text-gray-300 cursor-pointer font-semibold flex flex-row gap-2
+        ${path.includes("/amountManagement") ? "text-black" : ""}
+        `}
+        >
+          <Link to="/amountManagement" className="flex flex-row gap-2">
+            <FaWallet size={20} />
+            Amount
           </Link>
         </li>
         <li

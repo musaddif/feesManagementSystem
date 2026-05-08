@@ -11,6 +11,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import Report from "../pages/dashboard/report";
 import Students from "../pages/dashboard/students";
+import AmountManagement from "../pages/dashboard/amountManagement";
 
 
 const Layout = () => {
@@ -78,6 +79,14 @@ const Layout = () => {
         element={
           <ProtectedRoute>
             <Students />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/amountManagement"
+        element={
+          <ProtectedRoute>
+            <AmountManagement />
           </ProtectedRoute>
         }
       />
