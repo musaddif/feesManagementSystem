@@ -27,15 +27,11 @@ const Login = () => {
 
     try {
       const resultAction = await dispatch(login({ email, password }));
-      // console.log("login", resultAction?.payload?.user?.user_metadata?.role);
 
       if (login.fulfilled.match(resultAction)) {
         setMessage("Login successful!");
-        if (resultAction?.payload?.user?.user_metadata?.role == "Admin") {
-          navigate("/admin/adminDashboard");
-        } else {
-          navigate("/dashboard");
-        }
+        // navigate("/dashboard");
+        navigate("/students");
       } else if (login.rejected.match(resultAction)) {
         setMessage("Login failed: " + resultAction.payload);
       }
@@ -133,10 +129,10 @@ const Login = () => {
           </label> */}
         </div>
 
-        <Button 
-          className="" 
-          onClick={handleLogin} 
-          loading={loading} 
+        <Button
+          className=""
+          onClick={handleLogin}
+          loading={loading}
           loadingText="Logging in..."
         >
           Login

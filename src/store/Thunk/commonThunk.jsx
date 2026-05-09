@@ -40,10 +40,13 @@ export const getFees = createAsyncThunk(
   async (_request, { dispatch }) => {
     try {
       dispatch(setLoading(true));
-      const { data, error } = await supabase
-        .from("fees")
-        .select("*")
-        .eq("department_name", _request?.department_name);
+      let query = supabase.from("fees").select("*").eq("department_name", _request?.department_name);
+      
+      if (_request?.semester) {
+        query = query.eq("semester", _request.semester);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       dispatch(feeSlice(data));
     } catch (err) {
@@ -55,19 +58,22 @@ export const getFees = createAsyncThunk(
   },
 );
 export const getIntermadiateFees = createAsyncThunk(
-  "getFees",
+  "getIntermadiateFees",
   async (_request, { dispatch }) => {
-    // console.log("request", _request?.department_name);
-
     try {
       dispatch(setLoading(true));
-      const { data, error } = await supabase
-        .from("fees")
-        .select("*")
-        .eq("class_name", _request?.class_name);
+      let query = supabase.from("fees").select("*");
+      
+      if (_request?.inter_class) {
+        query = query.eq("inter_class", _request.inter_class);
+      } else if (_request?.class_name) {
+        // Fallback for existing logic
+        query = query.eq("class_name", _request.class_name);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       dispatch(feeSlice(data));
-      // dispatch(interFeeSlice(data));
     } catch (err) {
       console.log("error", err);
       dispatch(setError(err.message));
@@ -162,6 +168,89 @@ export const interSubmitFees = createAsyncThunk(
       dispatch(setLoading(false));
     }
   },
+);
+
+export const bulkSubmitFees = createAsyncThunk(
+  "bulkSubmitFees",
+  async (payload, { dispatch, rejectWithValue }) => {
+    try {
+      dispatch(setLoading(true));
+      const { selectedStudents, feeData, isInter } = payload;
+      const {
+        checkedItems,
+        totalFee,
+        eligibleAmount,
+        cashInHandAmount,
+        semester,
+      } = feeData;
+
+      // 1. Check for duplicates
+      const regNumbers = selectedStudents.map((s) =>
+        isInter ? s.inter_student_registration : s.registration_number
+      );
+      const regColumn = isInter
+        ? "inter_student_registration"
+        : "registration_number";
+
+      const { data: existingRecords, error: checkError } = await supabase
+        .from("feeSubmission")
+        .select(`id, ${regColumn}`)
+        .in(regColumn, regNumbers)
+        .eq("semester", semester)
+        .is("reversed_at", null);
+
+      if (checkError) throw checkError;
+
+      if (existingRecords && existingRecords.length > 0) {
+        const duplicateRegs = existingRecords.map((r) => r[regColumn]).join(", ");
+        return rejectWithValue({
+          success: false,
+          message: `The following students already have submitted fees for this semester: ${duplicateRegs}. Please unselect them to proceed.`,
+        });
+      }
+
+      // 2. Submit for all students
+      const promises = selectedStudents.map((student) => {
+        return supabase.rpc("submit_fee_transaction", {
+          p_registration_number: isInter ? null : student.registration_number,
+          p_inter_student_registration: isInter
+            ? student.inter_student_registration
+            : null,
+          p_amount: totalFee,
+          p_fee_type: checkedItems,
+          p_semester: semester,
+          p_eligible_amount: eligibleAmount || 0,
+          p_cash_in_hand_amount: cashInHandAmount || 0,
+        });
+      });
+
+      const results = await Promise.all(promises);
+
+      const failed = results.filter((r) => r.error);
+      if (failed.length > 0) {
+        console.error("Some submissions failed:", failed);
+        throw new Error("Failed to submit fees for some students");
+      }
+
+      dispatch(fetchTotalAmount());
+      dispatch(fetchTransactions());
+
+      return {
+        success: true,
+        message: `Successfully submitted fees for ${selectedStudents.length} students.`,
+      };
+    } catch (err) {
+      console.error("Error in bulkSubmitFees:", err);
+      dispatch(setError(err.message));
+      return rejectWithValue({
+        success: false,
+        error: err.message,
+        message: err.message || "Failed to submit bulk fees",
+      });
+    } finally {
+      dispatch(setLoading(false));
+    }
+  }
 );
 
 export const studentList = createAsyncThunk(
@@ -300,7 +389,7 @@ export const getSemesterStudents = createAsyncThunk(
   async (_request, { dispatch, rejectWithValue }) => {
     try {
       dispatch(setLoading(true));
-      const { data, error } = await supabase
+      let query = supabase
         .from("student")
         .select(
           `name,
@@ -310,11 +399,19 @@ export const getSemesterStudents = createAsyncThunk(
             created_at,
             rollno,
             department (department_name),
-            feeSubmission (registration_number,fee_type,amount,semester)`,
+            feeSubmission (registration_number,fee_type,amount,semester)`
         )
-        .eq("department", _request?.deprt)
-        .eq("batch", _request?.batchValue)
-        .eq("feeSubmission.semester", _request?.currentSemester);
+        .eq("department", _request?.deprt);
+
+      if (_request?.batchValue) {
+        query = query.eq("batch", _request.batchValue);
+      }
+
+      if (_request?.currentSemester) {
+        query = query.eq("feeSubmission.semester", _request.currentSemester);
+      }
+
+      const { data, error } = await query;
       if (error) {
         throw error;
       }
@@ -347,7 +444,7 @@ export const getInterClassStudents = createAsyncThunk(
     //
     try {
       dispatch(setLoading(true));
-      const { data, error } = await supabase
+      let query = supabase
         .from("interStudent")
         .select(
           `name,
@@ -357,11 +454,19 @@ export const getInterClassStudents = createAsyncThunk(
         created_at,
         rollno,
          inter(class_name),
-        feeSubmission(*)`,
+        feeSubmission(*)`
         )
-        .eq("department", _request?.deprt)
-        .eq("batch", _request?.batchValue)
-        .eq("feeSubmission.semester", _request?.interClass);
+        .eq("department", _request?.deprt);
+
+      if (_request?.batchValue) {
+        query = query.eq("batch", _request.batchValue);
+      }
+
+      if (_request?.interClass) {
+        query = query.eq("feeSubmission.semester", _request.interClass);
+      }
+
+      const { data, error } = await query;
       if (error) {
         throw error;
       }
@@ -434,33 +539,66 @@ export const getAllInterStudents = createAsyncThunk(
   },
 );
 
+export const getFeeSetting = createAsyncThunk(
+  "getFeeSetting",
+  async ({ department_name, semester, inter_class, study_level }, { dispatch, rejectWithValue }) => {
+    try {
+      dispatch(setLoading(true));
+      let query = supabase.from("fees").select("*");
+      
+      if (study_level === "BS") {
+        if (department_name) query = query.eq("department_name", department_name);
+        if (semester) query = query.eq("semester", semester);
+      } else {
+        if (inter_class) query = query.eq("inter_class", inter_class);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      return data && data.length > 0 ? data[0] : null;
+    } catch (err) {
+      console.error("Error fetching fee setting:", err.message);
+      dispatch(setError(err.message));
+      return rejectWithValue(err.message);
+    } finally {
+      dispatch(setLoading(false));
+    }
+  }
+);
+
 export const setFee = createAsyncThunk(
   "setFee",
   async (_request, { dispatch, rejectWithValue }) => {
-    // console.log("_request", _request);
-
     try {
       dispatch(setLoading(true));
-      const { data, error } = await supabase.from("fees").insert([
-        {
-          admission_fee: _request?.fees["Admission Fee"],
-          college_fee: _request?.fees["College Fee"],
-          CRF: _request?.fees?.CRF,
-          registration_fee: _request?.fees["Registration Fee"],
-          exam_fee: _request?.fees["Exam Fee"],
-          id_card_fee: _request?.fees["ID Card Fee"],
-          department_id: _request?.deprt?.id,
-          department_name: _request?.deprt?.name,
-          // amount: _request.totalAmount,
-        },
-      ]);
+      const payload = {
+        admission_fee: _request?.fees["Admission Fee"] || 0,
+        college_fee: _request?.fees["College Fee"] || 0,
+        CRF: _request?.fees["CRF"] || 0,
+        registration_fee: _request?.fees["Registration Fee"] || 0,
+        exam_fee: _request?.fees["Exam Fee"] || 0,
+        id_card_fee: _request?.fees["ID Card Fee"] || 0,
+        department_id: _request?.deprt?.id || null,
+        department_name: _request?.deprt?.name || null,
+        semester: _request?.semester || null,
+        inter_class: _request?.inter_class || null,
+      };
 
+      let query = supabase.from("fees");
+      if (_request.id) {
+        query = query.update(payload).eq("id", _request.id).select();
+      } else {
+        query = query.insert([payload]).select();
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      // console.log("data res", data);
+
       dispatch(getFeeSlice(data));
-      return data;
+      return data && data.length > 0 ? data[0] : data;
     } catch (err) {
-      console.error("Error inserting fee:", err.message);
+      console.error("Error inserting/updating fee:", err.message);
       dispatch(setError(err.message));
       return rejectWithValue(err.message);
     } finally {
@@ -903,6 +1041,10 @@ export const getInterStudents = createAsyncThunk(
 
       if (_request?.batchValue) {
         query = query.eq("batch", _request.batchValue);
+      }
+
+      if (_request?.interClass) {
+        query = query.eq("feeSubmission.semester", _request.interClass);
       }
 
       const { data, error } = await query;

@@ -42,3 +42,15 @@ export const semester = [
   "10th",
 ];
 export const inter_class = ["Part-I", "Part-II"];
+export const intermediateClasses = [
+  "Medical I",
+  "Medical II",
+  "Computer Science I",
+  "Computer Science II",
+  "Arts I",
+  "Arts II",
+  "Engineering I",
+  "Engineering II",
+  "Commerce I",
+  "Commerce II",
+];

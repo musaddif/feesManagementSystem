@@ -5,6 +5,7 @@ import {
   FaClipboardList,
   FaSignOutAlt,
   FaWallet,
+  FaCog,
 } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Button from "./button/button";
@@ -32,14 +33,14 @@ const SideBar = () => {
   };
 
   return (
-    <div className="h-full min-h-screen min-w-32 bg-[#b8860b]  rounded-e-lg   items-center p-8 flex-col">
+    <div className="h-full min-w-32 bg-[#b8860b]  rounded-e-lg   items-center p-8 flex flex-col">
       {/* <h1 className="text-white text-xl font-bold mb-6">Manage fee</h1> */}
-      <Button
+      {/* <Button
         onClick={() => navigate("/dashboard")}
         className="text-white mt-2 flex flex-row gap-2"
       >
         <IoArrowBack size={20} /> Back
-      </Button>
+      </Button> */}
       <ul className="text-white space-y-8 mt-14">
         <li
           className={`hover:text-gray-300 cursor-pointer font-semibold flex flex-row gap-2
@@ -86,7 +87,17 @@ const SideBar = () => {
         >
           <Link to="/amountManagement" className="flex flex-row gap-2">
             <FaWallet size={20} />
-            Amount
+            Finance
+          </Link>
+        </li>
+        <li
+          className={`hover:text-gray-300 cursor-pointer font-semibold flex flex-row gap-2
+        ${path.includes("/admin/adminDashboard") ? "text-black" : ""}
+        `}
+        >
+          <Link to="/admin/adminDashboard" className="flex flex-row gap-2">
+            <FaCog size={20} />
+            Setting
           </Link>
         </li>
         {/* <li
