@@ -51,6 +51,5 @@ export const intermediateClasses = [
   "Arts II",
   "Engineering I",
   "Engineering II",
-  "Commerce I",
-  "Commerce II",
+
 ];

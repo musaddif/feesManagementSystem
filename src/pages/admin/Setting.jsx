@@ -186,14 +186,30 @@ const Setting = () => {
           <SideBar />
         </div>
         <div className="bg-gradient-to-br from-gray-50 to-gray-100 flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-800">Fee Setting</h1>
-              <p className="text-gray-600 mt-2">
-                Configure baseline fee amounts for different academic structures.
-              </p>
-            </div>
+          <div className="max-w-4xl mx-auto ">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex flex-row justify-between items-start gap-4">
+                <div className="mb-8">
+                  <h1 className="text-3xl font-bold text-gray-800">Fee Setting</h1>
+                  <p className="text-gray-600 mt-2">
+                    Configure baseline fee amounts for different academic structures.
+                  </p>
+                </div>
 
+                <div className="flex flex-row items-center gap-4 mt-14">
+                  <label className="block font-semibold">Select Study Level</label>
+                  <select
+                    value={studyLevel}
+                    onChange={handleChange}
+                    className="border p-2 rounded"
+                  >
+                    <option value="">Select option</option>
+                    <option value="BS">BS</option>
+                    <option value="Intermediate">Intermediate</option>
+                  </select>
+                </div>
+              </div>
+            </div>
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
               <div className="bg-gray-50 border-b border-gray-200 p-6 flex flex-wrap gap-6 items-center">
                 {selectedDeprt ? (
@@ -275,13 +291,13 @@ const Setting = () => {
 
                 <div className="mb-6">
                   <h3 className="text-lg font-bold text-gray-800 mb-4">Fee Amounts</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {FeeType.map((fee) => (
-                      <div key={fee} className="flex flex-col gap-2 group">
-                        <label className="text-sm font-semibold text-gray-600 group-hover:text-[#b8860b] transition-colors">
+                      <div key={fee} className="flex flex-row items-center  group">
+                        <label className="text-sm font-semibold text-gray-600 group-hover:text-[#b8860b] transition-colors w-1/3 ">
                           {fee}
                         </label>
-                        <div className="relative">
+                        <div className="relative flex-1">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">Rs.</span>
                           <input
                             type="number"
@@ -310,17 +326,7 @@ const Setting = () => {
                 </div>
               </form>
             </div>
-            <label className="block mb-2 font-semibold">Select Study Level</label>
 
-            <select
-              value={studyLevel}
-              onChange={handleChange}
-              className="border p-2 rounded w-full"
-            >
-              <option value="">Select option</option>
-              <option value="BS">BS</option>
-              <option value="Intermediate">Intermediate</option>
-            </select>
           </div>
         </div>
       </div>

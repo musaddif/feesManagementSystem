@@ -41,11 +41,11 @@ export const getFees = createAsyncThunk(
     try {
       dispatch(setLoading(true));
       let query = supabase.from("fees").select("*").eq("department_name", _request?.department_name);
-      
+
       if (_request?.semester) {
         query = query.eq("semester", _request.semester);
       }
-      
+
       const { data, error } = await query;
       if (error) throw error;
       dispatch(feeSlice(data));
@@ -63,7 +63,7 @@ export const getIntermadiateFees = createAsyncThunk(
     try {
       dispatch(setLoading(true));
       let query = supabase.from("fees").select("*");
-      
+
       if (_request?.inter_class) {
         query = query.eq("inter_class", _request.inter_class);
       } else if (_request?.class_name) {
@@ -496,10 +496,9 @@ export const getInterClassStudents = createAsyncThunk(
 export const getAllInterStudents = createAsyncThunk(
   "getAllInterStudents",
   async (_request, { dispatch, rejectWithValue }) => {
-    // console.log("_re", _request?.deprt);
     try {
       dispatch(setLoading(true));
-      const { data, error } = await supabase
+      let query = supabase
         .from("interStudent")
         .select(
           `name,
@@ -510,12 +509,22 @@ export const getAllInterStudents = createAsyncThunk(
           rollno,
            inter(class_name),
              feeSubmission(*)`,
-        )
-        .eq("department", _request?.deprt);
+        );
 
-      if (error) {
-        throw error;
+      // All filters are optional — supports "All Departments" when deprt is omitted
+      if (_request?.deprt) {
+        query = query.eq("department", _request.deprt);
       }
+      if (_request?.batchValue) {
+        query = query.eq("batch", _request.batchValue);
+      }
+      if (_request?.interClass) {
+        query = query.eq("feeSubmission.semester", _request.interClass);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
       const transformed = data.map((student) => ({
         ...student,
         feeSubmission: student.feeSubmission?.map((item) => ({
@@ -527,7 +536,6 @@ export const getAllInterStudents = createAsyncThunk(
         })),
       }));
       dispatch(getInterStudentList(transformed));
-
       return transformed;
     } catch (err) {
       dispatch(setError(err.message));
@@ -535,7 +543,6 @@ export const getAllInterStudents = createAsyncThunk(
     } finally {
       dispatch(setLoading(false));
     }
-    //
   },
 );
 
@@ -545,7 +552,7 @@ export const getFeeSetting = createAsyncThunk(
     try {
       dispatch(setLoading(true));
       let query = supabase.from("fees").select("*");
-      
+
       if (study_level === "BS") {
         if (department_name) query = query.eq("department_name", department_name);
         if (semester) query = query.eq("semester", semester);
@@ -555,7 +562,7 @@ export const getFeeSetting = createAsyncThunk(
 
       const { data, error } = await query;
       if (error) throw error;
-      
+
       return data && data.length > 0 ? data[0] : null;
     } catch (err) {
       console.error("Error fetching fee setting:", err.message);

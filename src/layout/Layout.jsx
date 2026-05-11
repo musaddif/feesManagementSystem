@@ -17,7 +17,9 @@ import AmountManagement from "../pages/dashboard/amountManagement";
 const Layout = () => {
   return (
     <Routes>
-            <Route path="/" element={<Login />} />
+      <Route path="/" element={
+        <Login />
+      } />
       <Route
         path="/dashboard"
         element={
