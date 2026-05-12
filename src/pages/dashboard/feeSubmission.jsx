@@ -13,12 +13,11 @@ import {
 } from "../../store/Thunk/commonThunk";
 import Button from "../../component/button/button";
 import SideBar from "../../component/sideBar";
-import { semester, inter_class, departmentList, intermediateClasses } from "../../constant/lists";
+import { semester, inter_class, departmentList, intermediateClasses, ELIGIBLE_FEE_KEYS, CASH_IN_HAND_KEYS } from "../../constant/lists";
 import Header from "../../component/header";
 import { Skeleton } from "../../component/loader/skeleton";
 
-const ELIGIBLE_FEE_KEYS = ["admission_fee", "college_fee", "id_card_fee"];
-const CASH_IN_HAND_KEYS = ["exam_fee", "CRF", "crf", "registration_fee"];
+// Constants imported from lists.jsx
 
 const FeeSubmission = () => {
   const [checkedItems, setCheckedItems] = useState({});

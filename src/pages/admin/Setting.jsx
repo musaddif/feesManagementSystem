@@ -13,6 +13,7 @@ const Setting = () => {
     "Registration Fee",
     "Exam Fee",
     "ID Card Fee",
+    "Repeat Paper Fee",
   ];
 
   const dispatch = useDispatch();
@@ -103,6 +104,7 @@ const Setting = () => {
               "Registration Fee": data.registration_fee || "",
               "Exam Fee": data.exam_fee || "",
               "ID Card Fee": data.id_card_fee || "",
+              "Repeat Paper Fee": data.repeat_paper_fee || "",
             });
             setMessage("Existing settings found and loaded.");
             setMessageType("success");

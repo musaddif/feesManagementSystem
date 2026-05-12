@@ -6,6 +6,7 @@ const initialState = {
   addStudentList: [],
   getAllStudent: [],
   getFee: [],
+  allFees: [],
   interDepartments: [],
   getAllInterStudent: [],
   financeReport: [],
@@ -47,6 +48,10 @@ export const commonSlice = createSlice({
       ...state,
       getFee: action.payload,
     }),
+    setAllFees: (state, action) => ({
+      ...state,
+      allFees: action.payload,
+    }),
     interDeprt: (state, action) => ({
       ...state,
       interDepartments: action.payload,
@@ -79,6 +84,7 @@ export const {
   addStudents,
   getstudentList,
   getFeeSlice,
+  setAllFees,
   interDeprt,
   setReportData,
   setLoading,

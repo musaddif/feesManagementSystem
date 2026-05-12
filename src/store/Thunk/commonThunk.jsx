@@ -9,6 +9,7 @@ import {
   addStudents,
   getstudentList,
   getFeeSlice,
+  setAllFees,
   interDeprt,
   getInterStudentList,
   report,
@@ -16,7 +17,7 @@ import {
   setLoading,
   setError,
 } from "../slices/commonSlices";
-import { feesTypes, semester } from "../../constant/lists";
+import { feesTypes, semester, ELIGIBLE_FEE_KEYS, CASH_IN_HAND_KEYS } from "../../constant/lists";
 
 export const allDepartments = createAsyncThunk(
   "allDepartments",
@@ -84,10 +85,63 @@ export const getIntermadiateFees = createAsyncThunk(
 );
 export const submitFees = createAsyncThunk(
   "submitFees",
-
-  async (feeData, { dispatch, rejectWithValue }) => {
+  async (feeData, { dispatch, getState, rejectWithValue }) => {
     try {
       dispatch(setLoading(true));
+
+      // 1. Check for existing record
+      const { data: existing, error: fetchError } = await supabase
+        .from("feeSubmission")
+        .select("id, fee_type, amount, posted_amount, posted_cash_amount")
+        .eq("registration_number", feeData?.registrationNumber)
+        .eq("semester", feeData?.studentSemester)
+        .is("reversed_at", null)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (existing) {
+        const existingFeeType = typeof existing.fee_type === "string" ? JSON.parse(existing.fee_type) : existing.fee_type;
+        
+        // Detect already paid fees among selected ones
+        const alreadyPaid = Object.keys(feeData.checkedItems).filter(
+          (key) => feeData.checkedItems[key] === true && existingFeeType[key] === true
+        );
+
+        if (alreadyPaid.length > 0) {
+          const feeNames = alreadyPaid.map(k => k.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())).join(", ");
+          return rejectWithValue({
+            success: false,
+            message: `${feeNames} already submitted for this student in ${feeData?.studentSemester} semester.`,
+          });
+        }
+
+        // Merge fee_type
+        const mergedFeeType = { ...existingFeeType, ...feeData.checkedItems };
+
+        const { data, error } = await supabase.rpc("update_fee_transaction", {
+          p_registration_number: feeData?.registrationNumber,
+          p_inter_student_registration: null,
+          p_amount: (existing.amount || 0) + feeData?.totalFee,
+          p_fee_type: mergedFeeType,
+          p_semester: feeData?.studentSemester,
+          p_new_eligible_amount: (existing.posted_amount || 0) + (feeData?.eligibleAmount || 0),
+          p_new_cash_in_hand_amount: (existing.posted_cash_amount || 0) + (feeData?.cashInHandAmount || 0),
+        });
+
+        if (error) throw error;
+
+        dispatch(fetchTotalAmount());
+        dispatch(fetchTransactions());
+
+        return {
+          success: true,
+          data: data,
+          message: "Fees updated successfully",
+        };
+      }
+
+      // No existing record - perform standard insert
       const { data, error } = await supabase.rpc("submit_fee_transaction", {
         p_registration_number: feeData?.registrationNumber,
         p_inter_student_registration: null,
@@ -98,12 +152,8 @@ export const submitFees = createAsyncThunk(
         p_cash_in_hand_amount: feeData?.cashInHandAmount || 0,
       });
 
-      if (error) {
-        console.error("RPC error:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      // Refresh amount module data
       dispatch(fetchTotalAmount());
       dispatch(fetchTransactions());
 
@@ -128,10 +178,60 @@ export const submitFees = createAsyncThunk(
 
 export const interSubmitFees = createAsyncThunk(
   "interSubmitFees",
-
-  async (feeData, { dispatch, rejectWithValue }) => {
+  async (feeData, { dispatch, getState, rejectWithValue }) => {
     try {
       dispatch(setLoading(true));
+
+      // 1. Check for existing record
+      const { data: existing, error: fetchError } = await supabase
+        .from("feeSubmission")
+        .select("id, fee_type, amount, posted_amount, posted_cash_amount")
+        .eq("inter_student_registration", feeData?.registrationNumber)
+        .eq("semester", feeData?.interClass)
+        .is("reversed_at", null)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (existing) {
+        const existingFeeType = typeof existing.fee_type === "string" ? JSON.parse(existing.fee_type) : existing.fee_type;
+        
+        const alreadyPaid = Object.keys(feeData.checkedItems).filter(
+          (key) => feeData.checkedItems[key] === true && existingFeeType[key] === true
+        );
+
+        if (alreadyPaid.length > 0) {
+          const feeNames = alreadyPaid.map(k => k.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())).join(", ");
+          return rejectWithValue({
+            success: false,
+            message: `${feeNames} already submitted for this student in ${feeData?.interClass} class.`,
+          });
+        }
+
+        const mergedFeeType = { ...existingFeeType, ...feeData.checkedItems };
+
+        const { data, error } = await supabase.rpc("update_fee_transaction", {
+          p_registration_number: null,
+          p_inter_student_registration: feeData?.registrationNumber,
+          p_amount: (existing.amount || 0) + feeData?.totalFee,
+          p_fee_type: mergedFeeType,
+          p_semester: feeData?.interClass,
+          p_new_eligible_amount: (existing.posted_amount || 0) + (feeData?.eligibleAmount || 0),
+          p_new_cash_in_hand_amount: (existing.posted_cash_amount || 0) + (feeData?.cashInHandAmount || 0),
+        });
+
+        if (error) throw error;
+
+        dispatch(fetchTotalAmount());
+        dispatch(fetchTransactions());
+
+        return {
+          success: true,
+          data: data,
+          message: "Fees updated successfully",
+        };
+      }
+
       const { data, error } = await supabase.rpc("submit_fee_transaction", {
         p_registration_number: null,
         p_inter_student_registration: feeData?.registrationNumber,
@@ -142,12 +242,8 @@ export const interSubmitFees = createAsyncThunk(
         p_cash_in_hand_amount: feeData?.cashInHandAmount || 0,
       });
 
-      if (error) {
-        console.error("RPC error:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      // Refresh amount module data
       dispatch(fetchTotalAmount());
       dispatch(fetchTransactions());
 
@@ -172,7 +268,7 @@ export const interSubmitFees = createAsyncThunk(
 
 export const bulkSubmitFees = createAsyncThunk(
   "bulkSubmitFees",
-  async (payload, { dispatch, rejectWithValue }) => {
+  async (payload, { dispatch, getState, rejectWithValue }) => {
     try {
       dispatch(setLoading(true));
       const { selectedStudents, feeData, isInter } = payload;
@@ -194,28 +290,77 @@ export const bulkSubmitFees = createAsyncThunk(
 
       const { data: existingRecords, error: checkError } = await supabase
         .from("feeSubmission")
-        .select(`id, ${regColumn}`)
+        .select(`id, ${regColumn}, fee_type, amount, posted_amount, posted_cash_amount`)
         .in(regColumn, regNumbers)
         .eq("semester", semester)
         .is("reversed_at", null);
 
       if (checkError) throw checkError;
 
-      if (existingRecords && existingRecords.length > 0) {
-        const duplicateRegs = existingRecords.map((r) => r[regColumn]).join(", ");
+      // 2. Fetch fee structure for amount recalculation
+      const state = getState();
+      const feesList = state.common.fees;
+      const baseFees = Array.isArray(feesList) && feesList.length > 0 ? feesList[0] : null;
+
+      // 3. STRICT VALIDATION: Check for ANY duplicate before proceeding
+      const duplicateErrors = [];
+
+      selectedStudents.forEach((student) => {
+        const regNo = isInter ? student.inter_student_registration : student.registration_number;
+        const existing = existingRecords?.find((r) => r[regColumn] === regNo);
+
+        if (existing) {
+          const existingFeeType = typeof existing.fee_type === "string" ? JSON.parse(existing.fee_type) : existing.fee_type;
+          
+          const alreadyPaid = Object.keys(checkedItems).filter(
+            (key) => checkedItems[key] === true && existingFeeType[key] === true
+          );
+
+          if (alreadyPaid.length > 0) {
+            const feeNames = alreadyPaid.map(k => k.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())).join(", ");
+            duplicateErrors.push(`${feeNames} already submitted for ${student.name} (${regNo})`);
+          }
+        }
+      });
+
+      if (duplicateErrors.length > 0) {
+        // Return only the first few errors if there are many, to keep UI clean
+        const displayError = duplicateErrors.length > 3 
+          ? duplicateErrors.slice(0, 3).join("; ") + " and others."
+          : duplicateErrors.join("; ");
+
         return rejectWithValue({
           success: false,
-          message: `The following students already have submitted fees for this semester: ${duplicateRegs}. Please unselect them to proceed.`,
+          message: displayError,
         });
       }
 
-      // 2. Submit for all students
-      const promises = selectedStudents.map((student) => {
+      // 4. Submit for all students (no duplicates guaranteed here)
+      const promises = selectedStudents.map(async (student) => {
+        const regNo = isInter ? student.inter_student_registration : student.registration_number;
+        const existing = existingRecords?.find((r) => r[regColumn] === regNo);
+
+        if (existing) {
+          const existingFeeType = typeof existing.fee_type === "string" ? JSON.parse(existing.fee_type) : existing.fee_type;
+          
+          // Merge fee_type
+          const mergedFeeType = { ...existingFeeType, ...checkedItems };
+
+          return supabase.rpc("update_fee_transaction", {
+            p_registration_number: isInter ? null : regNo,
+            p_inter_student_registration: isInter ? regNo : null,
+            p_amount: (existing.amount || 0) + totalFee,
+            p_fee_type: mergedFeeType,
+            p_semester: semester,
+            p_new_eligible_amount: (existing.posted_amount || 0) + eligibleAmount,
+            p_new_cash_in_hand_amount: (existing.posted_cash_amount || 0) + cashInHandAmount,
+          });
+        }
+
+        // No existing record - perform standard insert
         return supabase.rpc("submit_fee_transaction", {
           p_registration_number: isInter ? null : student.registration_number,
-          p_inter_student_registration: isInter
-            ? student.inter_student_registration
-            : null,
+          p_inter_student_registration: isInter ? student.inter_student_registration : null,
           p_amount: totalFee,
           p_fee_type: checkedItems,
           p_semester: semester,
@@ -227,6 +372,7 @@ export const bulkSubmitFees = createAsyncThunk(
       const results = await Promise.all(promises);
 
       const failed = results.filter((r) => r.error);
+
       if (failed.length > 0) {
         console.error("Some submissions failed:", failed);
         throw new Error("Failed to submit fees for some students");
@@ -586,6 +732,7 @@ export const setFee = createAsyncThunk(
         registration_fee: _request?.fees["Registration Fee"] || 0,
         exam_fee: _request?.fees["Exam Fee"] || 0,
         id_card_fee: _request?.fees["ID Card Fee"] || 0,
+        repeat_paper_fee: _request?.fees["Repeat Paper Fee"] || 0,
         department_id: _request?.deprt?.id || null,
         department_name: _request?.deprt?.name || null,
         semester: _request?.semester || null,
@@ -1213,4 +1360,23 @@ export const getInterReportData = createAsyncThunk(
       return rejectWithValue(err.message);
     }
   },
+);
+
+export const getAllFeesData = createAsyncThunk(
+  "fees/getAllFeesData",
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      dispatch(setLoading(true));
+      const { data, error } = await supabase.from("fees").select("*");
+      if (error) throw error;
+      dispatch(setAllFees(data));
+      return data;
+    } catch (err) {
+      console.error("Error fetching all fees:", err.message);
+      dispatch(setError(err.message));
+      return rejectWithValue(err.message);
+    } finally {
+      dispatch(setLoading(false));
+    }
+  }
 );

@@ -5,6 +5,7 @@ import {
   getAllInterStudents,
   allDepartments,
   getFScdeprt,
+  getAllFeesData,
 } from "../../store/Thunk/commonThunk";
 import { getstudentList, getInterStudentList } from "../../store/slices/commonSlices";
 import SideBar from "../../component/sideBar";
@@ -26,6 +27,7 @@ const FEE_COLUMNS = [
   { label: "Exam Fee", shortLabel: "Exam", field: "exam_fee" },
   { label: "CRF", shortLabel: "CRF", field: "CRF" },
   { label: "ID Card Fee", shortLabel: "ID Card", field: "id_card_fee" },
+  { label: "Repeat Paper Fee", shortLabel: "Repeat", field: "repeat_paper_fee" },
 ];
 
 const FEE_TYPE_OPTIONS = ["All", ...FEE_COLUMNS.map(c => c.label)];
@@ -70,6 +72,7 @@ const StudentList = () => {
   const interDepts = useSelector((s) => s.common.interDepartments);
   const student = useSelector((s) => s.common.getAllStudent);
   const interStudent = useSelector((s) => s.common.getAllInterStudent);
+  const allFeesData = useSelector((s) => s.common.allFees);
   const globalLoading = useSelector((s) => s.common.loading);
   console.log("interDepts=", interDepts);
 
@@ -77,6 +80,7 @@ const StudentList = () => {
   useEffect(() => {
     dispatch(allDepartments());
     dispatch(getFScdeprt());
+    dispatch(getAllFeesData());
   }, [dispatch]);
 
   // ── Department options driven by study_level ──────────────────────────────
@@ -269,6 +273,52 @@ const StudentList = () => {
       { value: "Paid", label: "Paid" },
       { value: "Pending", label: "Pending" },
     ];
+
+  // ── Total Collected Calculation ───────────────────────────────────────────
+  const totalAmountCollected = useMemo(() => {
+    if (!students.length || !allFeesData.length) return 0;
+
+    return students.reduce((grandTotal, s) => {
+      const target = isBS ? currentSemester : interClass;
+      const submission = target
+        ? s?.feeSubmission?.find((fs) => fs.semester === target)
+        : s?.feeSubmission?.[0];
+
+      if (!submission) return grandTotal;
+
+      const ft = submission.fee_type || {};
+      
+      // Find matching fee structure for this student
+      const deptName = isBS 
+        ? s.department?.department_name 
+        : s?.inter?.class_name;
+      
+      const feeStructure = allFeesData.find(f => {
+        if (isBS) {
+          return f.department_name === deptName && f.semester === submission.semester;
+        } else {
+          return f.inter_class === submission.semester;
+        }
+      });
+
+      if (!feeStructure) return grandTotal;
+
+      let studentPaidSum = 0;
+      const selectedTypes = selectedFeeTypes.includes("All") 
+        ? FEE_COLUMNS.map(c => c.label) 
+        : selectedFeeTypes;
+
+      selectedTypes.forEach(typeLabel => {
+        const field = FEE_FIELD_MAP[typeLabel];
+        if (field && ft[field]) {
+          // If marked true/paid, add the amount from feeStructure
+          studentPaidSum += Number(feeStructure[field]) || 0;
+        }
+      });
+
+      return grandTotal + studentPaidSum;
+    }, 0);
+  }, [students, selectedFeeTypes, allFeesData, isBS, currentSemester, interClass]);
 
   // ── Excel download ────────────────────────────────────────────────────────
   const downloadReport = () => {
@@ -550,6 +600,20 @@ const StudentList = () => {
                 </tbody>
               </table>
             </div>
+          </section>
+
+          {/* Summary Section */}
+          <section className="total-summary-card">
+            <div className="total-content">
+              <span className="total-label">Total Amount Collected</span>
+              <div className="total-value">
+                <span className="currency">Rs.</span>
+                <span className="amount">{totalAmountCollected.toLocaleString()}</span>
+              </div>
+            </div>
+            <p className="total-helper-text">
+              Based on {students.length} filtered records and selected fee types
+            </p>
           </section>
 
           {/* Footer */}
