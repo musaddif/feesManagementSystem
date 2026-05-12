@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import SideBar from "../../component/sideBar";
 import Header from "../../component/header";
 import Button from "../../component/button/button";
-import { fetchTotalAmount, fetchTransactions, addMoneyThunk, addExpenseThunk } from "../../store/Thunk/amountThunk";
+import { fetchTotalAmount, fetchTransactions, addMoneyThunk, addExpenseThunk, withdrawCashThunk } from "../../store/Thunk/amountThunk";
 import "../style/amountManagement.css";
 import { Skeleton, TableSkeleton } from "../../component/loader/skeleton";
 
@@ -20,6 +20,12 @@ const AmountManagement = () => {
   const [walletName, setWalletName] = useState("");
   const [walletNumber, setWalletNumber] = useState("");
 
+  // New Expense Form States
+  const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenseDescription, setExpenseDescription] = useState("");
+  const [expenseMessage, setExpenseMessage] = useState("");
+  const [expenseMessageType, setExpenseMessageType] = useState("");
+
   useEffect(() => {
     dispatch(fetchTotalAmount());
     dispatch(fetchTransactions());
@@ -32,6 +38,30 @@ const AmountManagement = () => {
     setChequeNumber("");
     setWalletName("");
     setWalletNumber("");
+  };
+
+  const handleExpenseSubmit = async (e) => {
+    e.preventDefault();
+    const val = parseFloat(expenseAmount);
+
+    if (val > cashInHand) {
+      setExpenseMessage("Expense amount cannot exceed Cash In Hand.");
+      setExpenseMessageType("error");
+      return;
+    }
+
+    try {
+      await dispatch(withdrawCashThunk({ amount: val, description: expenseDescription })).unwrap();
+      setExpenseMessage("Expense added successfully.");
+      setExpenseMessageType("success");
+      setExpenseAmount("");
+      setExpenseDescription("");
+      // Clear message after 3 seconds
+      setTimeout(() => setExpenseMessage(""), 3000);
+    } catch (error) {
+      setExpenseMessage(error || "Withdrawal failed.");
+      setExpenseMessageType("error");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -108,6 +138,8 @@ const AmountManagement = () => {
               )}
             </div>
           </div>
+
+
 
           {/* Tabs */}
           <div className="tabs-container">
@@ -211,16 +243,63 @@ const AmountManagement = () => {
                   </div>
                 </div>
               )}
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  loading={loading}
+                  loadingText="Processing..."
+                  className="w-1/4 mt-4 "
+                >
+                  {activeTab === "add-money" ? "Earned" : "Make Payment"}
+                </Button>
+              </div>
+            </form>
+          </div>
 
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 mb-8">
+            <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
+              <span className="p-2 bg-red-100 text-red-600 rounded-lg">💸</span>
+              Deposit Cash to University Account
+            </h2>
+            <form onSubmit={handleExpenseSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-600">Amount (Rs.)</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="input-field"
+                  placeholder="0.00"
+                  value={expenseAmount}
+                  onChange={(e) => setExpenseAmount(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-2 md:col-span-1">
+                <label className="text-sm font-semibold text-gray-600">Description</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="e.g. deposit to university account"
+                  value={expenseDescription}
+                  onChange={(e) => setExpenseDescription(e.target.value)}
+                  required
+                />
+              </div>
               <Button
                 type="submit"
                 loading={loading}
-                loadingText="Processing..."
-                className="w-full mt-4"
+                loadingText="Saving..."
+                className="w-3/4 ml-20 "
               >
-                {activeTab === "add-money" ? "Earned" : "Make Payment"}
+                Deposit
               </Button>
+
             </form>
+            {expenseMessage && (
+              <div className={`mt-4 p-3 rounded-lg text-sm font-medium ${expenseMessageType === "success" ? "bg-green-50 text-green-700 border border-green-100" : "bg-red-50 text-red-700 border border-red-100"}`}>
+                {expenseMessage}
+              </div>
+            )}
           </div>
 
           {/* Recent Transactions Table */}

@@ -102,3 +102,28 @@ export const addExpenseThunk = createAsyncThunk(
     }
   }
 );
+
+export const withdrawCashThunk = createAsyncThunk(
+  "amount/withdrawCash",
+  async ({ amount, description }, { dispatch, rejectWithValue }) => {
+    try {
+      dispatch(setLoading(true));
+      const { data, error } = await supabase.rpc("withdraw_cash", {
+        p_amount: amount,
+        p_description: description,
+      });
+
+      if (error) throw error;
+      if (data.success === false) throw new Error(data.message);
+
+      dispatch(fetchTotalAmount());
+      dispatch(fetchTransactions());
+      return data;
+    } catch (err) {
+      dispatch(setError(err.message));
+      return rejectWithValue(err.message);
+    } finally {
+      dispatch(setLoading(false));
+    }
+  }
+);
