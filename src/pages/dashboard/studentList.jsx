@@ -222,9 +222,9 @@ const StudentList = () => {
     [isBS, currentSemester, interClass]
   );
 
-  const renderFeeStatus = (isPaid) => (
+  const renderFeeStatus = (isPaid, extraInfo = "") => (
     <span className={`status-badge ${isPaid ? "status-paid" : "status-pending"}`}>
-      {isPaid ? "Paid" : "-"}
+      {isPaid ? (extraInfo ? `Paid (${extraInfo})` : "Paid") : "-"}
     </span>
   );
 
@@ -311,8 +311,11 @@ const StudentList = () => {
       selectedTypes.forEach(typeLabel => {
         const field = FEE_FIELD_MAP[typeLabel];
         if (field && ft[field]) {
-          // If marked true/paid, add the amount from feeStructure
-          studentPaidSum += Number(feeStructure[field]) || 0;
+          let feeAmount = Number(feeStructure[field]) || 0;
+          if (field === "repeat_paper_fee") {
+            feeAmount = feeAmount * (submission.repeat_paper_count || 1);
+          }
+          studentPaidSum += feeAmount;
         }
       });
 
@@ -345,7 +348,15 @@ const StudentList = () => {
 
       // Dynamic fee columns
       visibleCols.forEach(col => {
-        row[col.label] = ft[col.field] ? "Paid" : "Pending";
+        if (ft[col.field]) {
+          if (col.field === "repeat_paper_fee" && submission.repeat_paper_count > 0) {
+            row[col.label] = `Paid (${submission.repeat_paper_count})`;
+          } else {
+            row[col.label] = "Paid";
+          }
+        } else {
+          row[col.label] = "Pending";
+        }
       });
 
       row.Status = getStudentStatus(s, selectedFeeTypes).text;
@@ -573,7 +584,7 @@ const StudentList = () => {
                             <td key={col.field}>
                               {col.field === "id_card_fee" && isBS && ["2nd", "4th", "6th", "8th", "10th"].includes(currentSemester)
                                 ? <span className="text-gray-400">N/A</span>
-                                : renderFeeStatus(ft[col.field])}
+                                : renderFeeStatus(ft[col.field], col.field === "repeat_paper_fee" && submission?.repeat_paper_count > 0 ? submission.repeat_paper_count : "")}
                             </td>
                           ))}
                           <td>

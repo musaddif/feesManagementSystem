@@ -127,6 +127,7 @@ export const submitFees = createAsyncThunk(
           p_semester: feeData?.studentSemester,
           p_new_eligible_amount: (existing.posted_amount || 0) + (feeData?.eligibleAmount || 0),
           p_new_cash_in_hand_amount: (existing.posted_cash_amount || 0) + (feeData?.cashInHandAmount || 0),
+          p_repeat_paper_count: (existing.repeat_paper_count || 0) + (feeData?.repeatPaperCount || 0),
         });
 
         if (error) throw error;
@@ -150,6 +151,7 @@ export const submitFees = createAsyncThunk(
         p_semester: feeData?.studentSemester,
         p_eligible_amount: feeData?.eligibleAmount || 0,
         p_cash_in_hand_amount: feeData?.cashInHandAmount || 0,
+        p_repeat_paper_count: feeData?.repeatPaperCount || 0,
       });
 
       if (error) throw error;
@@ -218,6 +220,7 @@ export const interSubmitFees = createAsyncThunk(
           p_semester: feeData?.interClass,
           p_new_eligible_amount: (existing.posted_amount || 0) + (feeData?.eligibleAmount || 0),
           p_new_cash_in_hand_amount: (existing.posted_cash_amount || 0) + (feeData?.cashInHandAmount || 0),
+          p_repeat_paper_count: (existing.repeat_paper_count || 0) + (feeData?.repeatPaperCount || 0),
         });
 
         if (error) throw error;
@@ -240,6 +243,7 @@ export const interSubmitFees = createAsyncThunk(
         p_semester: feeData?.interClass,
         p_eligible_amount: feeData?.eligibleAmount || 0,
         p_cash_in_hand_amount: feeData?.cashInHandAmount || 0,
+        p_repeat_paper_count: feeData?.repeatPaperCount || 0,
       });
 
       if (error) throw error;
@@ -278,6 +282,7 @@ export const bulkSubmitFees = createAsyncThunk(
         eligibleAmount,
         cashInHandAmount,
         semester,
+        repeatPaperCount,
       } = feeData;
 
       // 1. Check for duplicates
@@ -354,6 +359,7 @@ export const bulkSubmitFees = createAsyncThunk(
             p_semester: semester,
             p_new_eligible_amount: (existing.posted_amount || 0) + eligibleAmount,
             p_new_cash_in_hand_amount: (existing.posted_cash_amount || 0) + cashInHandAmount,
+            p_repeat_paper_count: (existing.repeat_paper_count || 0) + (repeatPaperCount || 0),
           });
         }
 
@@ -366,6 +372,7 @@ export const bulkSubmitFees = createAsyncThunk(
           p_semester: semester,
           p_eligible_amount: eligibleAmount || 0,
           p_cash_in_hand_amount: cashInHandAmount || 0,
+          p_repeat_paper_count: repeatPaperCount || 0,
         });
       });
 

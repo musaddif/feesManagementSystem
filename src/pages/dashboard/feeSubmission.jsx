@@ -37,6 +37,7 @@ const FeeSubmission = () => {
   const [batchValue, setBatchValue] = useState("");
   const [studentSemester, setStudentSemester] = useState("");
   const [interClass, setInterClass] = useState("");
+  const [repeatPaperCount, setRepeatPaperCount] = useState("");
 
   const dispatch = useDispatch();
 
@@ -112,7 +113,7 @@ const FeeSubmission = () => {
 
     setStudentList(result);
     // Keep only those that are still in the filtered list
-    setSelectedStudents((prev) => prev.filter(s => 
+    setSelectedStudents((prev) => prev.filter(s =>
       result.some(r => (isInter ? r.inter_student_registration === s.inter_student_registration : r.registration_number === s.registration_number))
     ));
   }, [batchValue, getstudentList, isInter]);
@@ -131,7 +132,11 @@ const FeeSubmission = () => {
 
     Object.keys(feesList[0]).forEach((key) => {
       if (checkedItems[key]) {
-        const amount = Number(feesList[0][key]) || 0;
+        let amount = Number(feesList[0][key]) || 0;
+        if (key === "repeat_paper_fee") {
+          const count = parseInt(repeatPaperCount) || 1;
+          amount = amount * count;
+        }
         loadedTotal += amount;
         if (ELIGIBLE_FEE_KEYS.includes(key)) loadedEligible += amount;
         if (CASH_IN_HAND_KEYS.includes(key)) loadedCash += amount;
@@ -141,11 +146,14 @@ const FeeSubmission = () => {
     setEligibleAmount(loadedEligible);
     setCashInHandAmount(loadedCash);
     setTotalFee(loadedTotal);
-  }, [feesList, checkedItems]);
+  }, [feesList, checkedItems, repeatPaperCount]);
 
   const handleCheckBoxes = (e) => {
     const { name, checked } = e.target;
     setCheckedItems((prev) => ({ ...prev, [name]: checked }));
+    if (name === "repeat_paper_fee" && !checked) {
+      setRepeatPaperCount("");
+    }
   };
 
   const feeKeys =
@@ -205,18 +213,43 @@ const FeeSubmission = () => {
 
     if (missing.length) {
       setMessage(`Please select ${missing.join(", ")}`);
+      setMessageType("error");
       return;
+    }
+
+    if (checkedItems["repeat_paper_fee"]) {
+      if (!repeatPaperCount) {
+        setMessage("Please enter number of repeat papers.");
+        setMessageType("error");
+        return;
+      }
+      const count = parseInt(repeatPaperCount);
+      if (isNaN(count) || count <= 0) {
+        setMessage("Repeat papers must be a valid whole number.");
+        setMessageType("error");
+        return;
+      }
     }
 
     const payload = {
       selectedStudents,
       isInter,
       feeData: {
-        checkedItems,
+        checkedItems: Object.keys(checkedItems).reduce((acc, key) => {
+          if (checkedItems[key]) {
+            if (key === "repeat_paper_fee") {
+              acc[key] = (feesList[0][key] || 0) * (parseInt(repeatPaperCount) || 1);
+            } else {
+              acc[key] = true;
+            }
+          }
+          return acc;
+        }, {}),
         totalFee,
         eligibleAmount,
         cashInHandAmount,
         semester: currentSem,
+        repeatPaperCount: checkedItems["repeat_paper_fee"] ? parseInt(repeatPaperCount) : 0,
       }
     };
 
@@ -233,6 +266,7 @@ const FeeSubmission = () => {
         if (result.payload?.success) {
           setCheckedItems({});
           setSelectedStudents([]);
+          setRepeatPaperCount("");
           setMessage(result.payload.message || "Fees submitted successfully!");
           setMessageType("success");
         } else {
@@ -314,20 +348,21 @@ const FeeSubmission = () => {
                 </div>
               </div>
 
-              </div>
+            </div>
 
-              <div className="space-y-8">
+            <div className="space-y-8">
 
-                {/* Fee Type Selection */}
-                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Select Fee Types</h3>
-                  <div className="flex flex-wrap gap-6 items-center">
-                    {feeKeys.map((key) => {
-                      const hideIdCard = key === "id_card_fee" && studentSemester && ["2nd", "4th", "6th", "8th", "10th"].includes(studentSemester);
-                      if (hideIdCard) return null;
+              {/* Fee Type Selection */}
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Select Fee Types</h3>
+                <div className="flex flex-wrap gap-6 items-center">
+                  {feeKeys.map((key) => {
+                    const hideIdCard = key === "id_card_fee" && studentSemester && ["2nd", "4th", "6th", "8th", "10th"].includes(studentSemester);
+                    if (hideIdCard) return null;
 
-                      return (
-                        <div key={key} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors">
+                    return (
+                      <div key={key} className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors">
                           <input
                             type="checkbox"
                             id={key}
@@ -340,99 +375,128 @@ const FeeSubmission = () => {
                             {key.replace(/_/g, " ")}
                           </label>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Summary & Submit Action */}
-                <div className="bg-[#fdf9f1] p-4 rounded-lg border border-[#e6d09a] flex flex-wrap gap-6 items-center justify-between">
-                  <div className="flex gap-8">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-500">Selected Students</p>
-                      <p className="text-2xl font-bold text-[#b8860b]">{selectedStudents.length}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm text-gray-500">Total Per Student</p>
-                      <p className="text-2xl font-bold text-green-600">Rs. {totalFee.toLocaleString()}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm text-gray-500">Grand Total</p>
-                      <p className="text-2xl font-bold text-blue-600">Rs. {(totalFee * selectedStudents.length).toLocaleString()}</p>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={bulkSubmit}
-                    loading={globalLoading}
-                    loadingText="Processing..."
-                    className="!px-8 !py-3 !text-lg shadow-md hover:shadow-lg"
-                    disabled={selectedStudents.length === 0 || totalFee === 0}
-                  >
-                    Submit Bulk Fees
-                  </Button>
-                </div>
-
-                {message && (
-                  <div className={`p-4 rounded-lg ${messageType === "success" ? "bg-green-100 text-green-800 border border-green-200" : "bg-red-100 text-red-800 border border-red-200"} font-medium flex items-center justify-between`}>
-                    <span>{message}</span>
-                    <button onClick={() => setMessage("")} className="text-xl font-bold opacity-70 hover:opacity-100">&times;</button>
-                  </div>
-                )}
-
-                {/* Student List Table */}
-                {batchValue && (
-                  <div className="bg-white rounded-lg border border-gray-200 overflow-hidden mt-6">
-                    <div className="overflow-x-auto max-h-[500px]">
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-gray-100 sticky top-0 z-10 shadow-sm">
-                          <tr>
-                            <th className="p-4 border-b w-16 text-center">
+                        {key === "repeat_paper_fee" && checkedItems[key] && (
+                          <div className="ml-8 flex flex-col gap-1 border-l-2 border-[#b8860b]/20 pl-3 py-1">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">No. of Papers</label>
+                            <div className="flex items-center gap-2">
                               <input
-                                type="checkbox"
-                                className="w-5 h-5 rounded border-gray-300 text-[#b8860b] focus:ring-[#b8860b]"
-                                checked={studentList.length > 0 && selectedStudents.length === studentList.length}
-                                onChange={handleSelectAll}
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={repeatPaperCount}
+                                onChange={(e) => setRepeatPaperCount(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (["e", "E", "+", "-", "."].includes(e.key)) e.preventDefault();
+                                }}
+                                className="w-20 h-9 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#b8860b]/50 focus:border-[#b8860b] outline-none transition-all font-semibold text-gray-700"
+                                placeholder="Qty"
                               />
-                            </th>
-                            <th className="p-4 border-b font-semibold text-gray-700">Name</th>
-                            <th className="p-4 border-b font-semibold text-gray-700">Roll No</th>
-                            <th className="p-4 border-b font-semibold text-gray-700">Registration No</th>
-                            <th className="p-4 border-b font-semibold text-gray-700">Batch</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {studentList.length > 0 ? (
-                            studentList.map((student, idx) => {
-                              const reg = isInter ? student.inter_student_registration : student.registration_number;
-                              return (
-                                <tr key={idx} className="hover:bg-gray-50 border-b transition-colors">
-                                  <td className="p-4 text-center">
-                                    <input
-                                      type="checkbox"
-                                      className="w-5 h-5 rounded border-gray-300 text-[#b8860b] focus:ring-[#b8860b]"
-                                      checked={isStudentSelected(student)}
-                                      onChange={(e) => handleSelectStudent(student, e.target.checked)}
-                                    />
-                                  </td>
-                                  <td className="p-4 text-gray-800 font-medium">{student.name}</td>
-                                  <td className="p-4 text-gray-600">{student.rollno}</td>
-                                  <td className="p-4 text-gray-600">{reg}</td>
-                                  <td className="p-4 text-gray-600">{student.batch}</td>
-                                </tr>
-                              );
-                            })
-                          ) : (
-                            <tr>
-                              <td colSpan="5" className="p-8 text-center text-gray-500">
-                                No students found for this batch.
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
+                              <span className="text-xs text-gray-400 font-medium italic">
+                                &times; Rs. {(feesList[0][key] || 0).toLocaleString()}
+                              </span>
+                            </div>
+                            {repeatPaperCount > 0 && (
+                              <p className="text-[11px] text-[#b8860b] font-bold">
+                                Total: Rs. {(feesList[0][key] * repeatPaperCount).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                </div>
+              </div>
+
+              {/* Summary & Submit Action */}
+              <div className="bg-[#fdf9f1] p-4 rounded-lg border border-[#e6d09a] flex flex-wrap gap-6 items-center justify-between">
+                <div className="flex gap-8">
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500">Selected Students</p>
+                    <p className="text-2xl font-bold text-[#b8860b]">{selectedStudents.length}</p>
                   </div>
-                )}
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500">Total Per Student</p>
+                    <p className="text-2xl font-bold text-green-600">Rs. {totalFee.toLocaleString()}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500">Grand Total</p>
+                    <p className="text-2xl font-bold text-blue-600">Rs. {(totalFee * selectedStudents.length).toLocaleString()}</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={bulkSubmit}
+                  loading={globalLoading}
+                  loadingText="Processing..."
+                  className="!px-8 !py-3 !text-lg shadow-md hover:shadow-lg"
+                  disabled={selectedStudents.length === 0 || totalFee === 0}
+                >
+                  Submit Bulk Fees
+                </Button>
+              </div>
+
+              {message && (
+                <div className={`p-4 rounded-lg ${messageType === "success" ? "bg-green-100 text-green-800 border border-green-200" : "bg-red-100 text-red-800 border border-red-200"} font-medium flex items-center justify-between`}>
+                  <span>{message}</span>
+                  <button onClick={() => setMessage("")} className="text-xl font-bold opacity-70 hover:opacity-100">&times;</button>
+                </div>
+              )}
+
+              {/* Student List Table */}
+              {batchValue && (
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden mt-6">
+                  <div className="overflow-x-auto max-h-[500px]">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-gray-100 sticky top-0 z-10 shadow-sm">
+                        <tr>
+                          <th className="p-4 border-b w-16 text-center">
+                            <input
+                              type="checkbox"
+                              className="w-5 h-5 rounded border-gray-300 text-[#b8860b] focus:ring-[#b8860b]"
+                              checked={studentList.length > 0 && selectedStudents.length === studentList.length}
+                              onChange={handleSelectAll}
+                            />
+                          </th>
+                          <th className="p-4 border-b font-semibold text-gray-700">Name</th>
+                          <th className="p-4 border-b font-semibold text-gray-700">Roll No</th>
+                          <th className="p-4 border-b font-semibold text-gray-700">Registration No</th>
+                          <th className="p-4 border-b font-semibold text-gray-700">Batch</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {studentList.length > 0 ? (
+                          studentList.map((student, idx) => {
+                            const reg = isInter ? student.inter_student_registration : student.registration_number;
+                            return (
+                              <tr key={idx} className="hover:bg-gray-50 border-b transition-colors">
+                                <td className="p-4 text-center">
+                                  <input
+                                    type="checkbox"
+                                    className="w-5 h-5 rounded border-gray-300 text-[#b8860b] focus:ring-[#b8860b]"
+                                    checked={isStudentSelected(student)}
+                                    onChange={(e) => handleSelectStudent(student, e.target.checked)}
+                                  />
+                                </td>
+                                <td className="p-4 text-gray-800 font-medium">{student.name}</td>
+                                <td className="p-4 text-gray-600">{student.rollno}</td>
+                                <td className="p-4 text-gray-600">{reg}</td>
+                                <td className="p-4 text-gray-600">{student.batch}</td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr>
+                            <td colSpan="5" className="p-8 text-center text-gray-500">
+                              No students found for this batch.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -452,14 +516,14 @@ const FeeSubmission = () => {
               </p>
             </div>
             <div className="flex gap-4 justify-end">
-              <button 
+              <button
                 onClick={() => setShowConfirmModal(false)}
                 className="px-6 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition-colors"
                 disabled={globalLoading}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={executeSubmit}
                 className="px-6 py-2 rounded-lg bg-[#b8860b] text-white hover:bg-[#8b6508] font-bold shadow-md transition-all disabled:opacity-50"
                 disabled={globalLoading}
