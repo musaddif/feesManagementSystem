@@ -7,15 +7,54 @@ export const fetchTotalAmount = createAsyncThunk(
   async (_, { dispatch, rejectWithValue }) => {
     try {
       dispatch(setLoading(true));
-      const { data, error } = await supabase
-        .from("amount_summary")
-        .select("total_amount, cash_in_hand")
-        .single();
 
-      if (error) throw error;
-      dispatch(setTotalAmount(data.total_amount));
-      dispatch(setCashInHand(data.cash_in_hand));
-      return data;
+      // 1. Fetch fee submissions dynamically
+      const { data: fees, error: feesError } = await supabase
+        .from("feeSubmission")
+        .select("posted_amount, posted_cash_amount")
+        .is("reversed_at", null);
+
+      if (feesError) throw feesError;
+
+      // 2. Fetch all manual transactions dynamically
+      const { data: txs, error: txError } = await supabase
+        .from("amount_transactions")
+        .select("type, amount, title")
+        .is("fee_submission_id", null);
+
+      if (txError) throw txError;
+
+      let calculatedTotalBalance = 0;
+      let calculatedCashInHand = 0;
+
+      // Add Fees
+      fees.forEach(fee => {
+        calculatedTotalBalance += (Number(fee.posted_amount) || 0);
+        calculatedCashInHand += (Number(fee.posted_cash_amount) || 0);
+      });
+
+      // Add Manual Transactions
+      txs.forEach(tx => {
+        const amt = Number(tx.amount) || 0;
+        if (tx.type === "income") {
+          // Manual income increases Total Balance (Add Money)
+          calculatedTotalBalance += amt;
+        } else if (tx.type === "expense") {
+          // Identify Withdrawals (Deposit Cash to University Account) vs normal Expenses
+          if (tx.title.startsWith("[WITHDRAW_CASH]")) {
+             calculatedCashInHand -= amt;
+          } else if (tx.title.startsWith("[EXPENSE]")) {
+             calculatedTotalBalance -= amt;
+          } else {
+             // Fallback for old expense records (if any)
+             calculatedTotalBalance -= amt;
+          }
+        }
+      });
+
+      dispatch(setTotalAmount(calculatedTotalBalance));
+      dispatch(setCashInHand(calculatedCashInHand));
+      return { total_amount: calculatedTotalBalance, cash_in_hand: calculatedCashInHand };
     } catch (err) {
       dispatch(setError(err.message));
       return rejectWithValue(err.message);
@@ -52,13 +91,14 @@ export const addMoneyThunk = createAsyncThunk(
   async (amountData, { dispatch, rejectWithValue }) => {
     try {
       dispatch(setLoading(true));
-      const { error } = await supabase.rpc("add_money", {
-        p_title: amountData.title,
-        p_amount: amountData.amount,
-        p_payment_method: amountData.paymentMethod,
-        p_cheque_number: amountData.chequeNumber || null,
-        p_wallet_name: amountData.walletName || null,
-        p_wallet_number: amountData.walletNumber || null,
+      const { error } = await supabase.from("amount_transactions").insert({
+        title: amountData.title,
+        type: "income",
+        amount: amountData.amount,
+        payment_method: amountData.paymentMethod,
+        cheque_number: amountData.chequeNumber || null,
+        wallet_name: amountData.walletName || null,
+        wallet_number: amountData.walletNumber || null,
       });
 
       if (error) throw error;
@@ -80,13 +120,14 @@ export const addExpenseThunk = createAsyncThunk(
   async (amountData, { dispatch, rejectWithValue }) => {
     try {
       dispatch(setLoading(true));
-      const { error } = await supabase.rpc("add_expense", {
-        p_title: amountData.title,
-        p_amount: amountData.amount,
-        p_payment_method: amountData.paymentMethod,
-        p_cheque_number: amountData.chequeNumber || null,
-        p_wallet_name: amountData.walletName || null,
-        p_wallet_number: amountData.walletNumber || null,
+      const { error } = await supabase.from("amount_transactions").insert({
+        title: "[EXPENSE] " + amountData.title,
+        type: "expense",
+        amount: amountData.amount,
+        payment_method: amountData.paymentMethod,
+        cheque_number: amountData.chequeNumber || null,
+        wallet_name: amountData.walletName || null,
+        wallet_number: amountData.walletNumber || null,
       });
 
       if (error) throw error;
@@ -108,17 +149,18 @@ export const withdrawCashThunk = createAsyncThunk(
   async ({ amount, description }, { dispatch, rejectWithValue }) => {
     try {
       dispatch(setLoading(true));
-      const { data, error } = await supabase.rpc("withdraw_cash", {
-        p_amount: amount,
-        p_description: description,
+      const { error } = await supabase.from("amount_transactions").insert({
+        title: "[WITHDRAW_CASH] " + description,
+        type: "expense",
+        amount: amount,
+        payment_method: "Cash",
       });
 
       if (error) throw error;
-      if (data.success === false) throw new Error(data.message);
 
       dispatch(fetchTotalAmount());
       dispatch(fetchTransactions());
-      return data;
+      return { success: true };
     } catch (err) {
       dispatch(setError(err.message));
       return rejectWithValue(err.message);

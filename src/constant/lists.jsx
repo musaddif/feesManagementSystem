@@ -23,7 +23,7 @@ export const intermediateList = [
 ];
 
 export const ELIGIBLE_FEE_KEYS = ["admission_fee", "college_fee", "id_card_fee"];
-export const CASH_IN_HAND_KEYS = ["exam_fee", "CRF", "crf", "registration_fee", "repeat_paper_fee"];
+export const CASH_IN_HAND_KEYS = ["exam_fee", "CRF", "crf", "registration_fee"];
 
 export const feesTypes = [
   "Admission Fee",
