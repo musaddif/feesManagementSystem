@@ -203,6 +203,12 @@ const Students = () => {
               Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className="h-16 w-full mb-3" />
               ))
+            ) : !globalLoading && initialLoadDone && batchArr.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="text-5xl mb-4">🔍</div>
+                <h3 className="text-lg font-semibold text-gray-600 mb-1">No Students Found</h3>
+                <p className="text-sm text-gray-400">No students match the selected filters. Try adjusting or clearing your filters.</p>
+              </div>
             ) : (
               batchArr
                 .sort((a, b) => Number(b) - Number(a))
@@ -287,6 +293,13 @@ const Students = () => {
                             </>
                           )}
 
+                          {studentsInBatch.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-10 mt-4 rounded-lg bg-gray-50 border border-dashed border-gray-300">
+                              <div className="text-4xl mb-3">📭</div>
+                              <p className="text-base font-semibold text-gray-500">No students found for selected filters</p>
+                              <p className="text-xs text-gray-400 mt-1">Try changing the semester, class, or department filter.</p>
+                            </div>
+                          ) : (
                           <div className="space-y-6 mt-4">
                             <div>
                               <h2 className="text-lg font-semibold mb-2">
@@ -429,6 +442,7 @@ const Students = () => {
                               </table>
                             </div>
                           </div>
+                          )}
                         </div>
                       )}
                     </div>
