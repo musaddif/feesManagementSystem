@@ -12,9 +12,8 @@ import "../../constant/applicationStyle.css";
 import "../style/excelFileReader.css";
 import { useNavigate } from "react-router-dom";
 import { semester, inter_class } from "../../constant/lists";
-import Header from "../../component/header"
 import { Skeleton } from "../../component/loader/skeleton";
-
+import Header from "../../component/header";
 const Students = () => {
   const [studentSemester, setStudentSemester] = useState("All");
   const [openBatch, setOpenBatch] = useState(null);
@@ -157,7 +156,6 @@ const Students = () => {
       }
     });
 
-    // Calculate pending fees per type
     const pendingCounts = {};
     const allFeeTypes = [
       "registration_fee",
@@ -203,13 +201,11 @@ const Students = () => {
       <Header />
 
       <div className="flex flex-1 overflow-hidden">
-        <div className="">
+        <div className="flex-shrink-0 h-full">
           <SideBar />
         </div>
 
-
-
-        <div className="flex-1 px-6 py-4 overflow-y-auto">
+        <div className="flex-1 px-3 py-4 sm:px-6 overflow-y-auto">
 
           <div className="max-w-3xl mx-auto">
             {globalLoading && batchArr.length === 0 ? (
@@ -243,209 +239,160 @@ const Students = () => {
                       </button>
 
                       {openBatch === batch && (
-                        <div className="p-4 m-3 bg-white">
-                          {selectedDeprt?.study_level === "BS" ? (
-                            <>
-                              <label>Department: </label>
-                              <select
-                                className="dropDown mr-4"
-                                onChange={(e) => setDeptFilter(e.target.value)}
-                                value={deptFilter}
-                              >
-                                <option value="">All Departments</option>
-                                {bsDepartments?.map((dept, index) => (
-                                  <option key={index} value={dept.department_name}>
-                                    {dept.department_name}
-                                  </option>
-                                ))}
-                              </select>
+                        <div className="p-3 sm:p-4 m-2 sm:m-3 bg-white">
+                          {/* Filters */}
+                          <div className="flex flex-wrap gap-3 mb-4">
+                            {selectedDeprt?.study_level === "BS" ? (
+                              <>
+                                <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
+                                  <label className="text-xs font-semibold text-gray-600 uppercase">Department</label>
+                                  <select
+                                    className="dropDown w-full"
+                                    onChange={(e) => setDeptFilter(e.target.value)}
+                                    value={deptFilter}
+                                  >
+                                    <option value="">All Departments</option>
+                                    {bsDepartments?.map((dept, index) => (
+                                      <option key={index} value={dept.department_name}>
+                                        {dept.department_name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
 
-                              <label>Semester: </label>
-                              <select
-                                className="dropDown"
-                                onChange={(e) => setStudentSemester(e.target.value)}
-                                value={studentSemester}
-                              >
-                                <option value="All">All Semesters</option>
-                                {semester.map((item, index) => (
-                                  <option key={index} value={item}>
-                                    {item} Semester
-                                  </option>
-                                ))}
-                              </select>
-                            </>
-                          ) : (
-                            <>
-                              <label>Department: </label>
-                              <select
-                                className="dropDown mr-4"
-                                onChange={(e) => setDeptFilter(e.target.value)}
-                                value={deptFilter}
-                              >
-                                <option value="">All Departments</option>
-                                {interDepartments?.map((dept, index) => (
-                                  <option key={index} value={dept.class_name}>
-                                    {dept.class_name}
-                                  </option>
-                                ))}
-                              </select>
-
-                              {/* <label>Part: </label>
-                              <select
-                                className="dropDown w-28"
-                                onChange={(e) => setInterClass(e.target.value)}
-                                value={interClass}
-                              >
-                                <option value="">All Parts</option>
-                                {inter_class.map((item, index) => (
-                                  <option key={index} value={item}>
-                                    {item}
-                                  </option>
-                                ))}
-                              </select> */}
-                            </>
-                          )}
+                                <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
+                                  <label className="text-xs font-semibold text-gray-600 uppercase">Semester</label>
+                                  <select
+                                    className="dropDown w-full"
+                                    onChange={(e) => setStudentSemester(e.target.value)}
+                                    value={studentSemester}
+                                  >
+                                    <option value="All">All Semesters</option>
+                                    {semester.map((item, index) => (
+                                      <option key={index} value={item}>
+                                        {item} Semester
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
+                                <label className="text-xs font-semibold text-gray-600 uppercase">Department</label>
+                                <select
+                                  className="dropDown w-full"
+                                  onChange={(e) => setDeptFilter(e.target.value)}
+                                  value={deptFilter}
+                                >
+                                  <option value="">All Departments</option>
+                                  {interDepartments?.map((dept, index) => (
+                                    <option key={index} value={dept.class_name}>
+                                      {dept.class_name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </div>
 
                           <div className="space-y-6 mt-4">
+                            {/* Student Statistics */}
                             <div>
-                              <h2 className="text-lg font-semibold mb-2">
+                              <h2 className="text-base sm:text-lg font-semibold mb-2">
                                 Student Statistics
                               </h2>
-
-                              <table className="w-full border border-gray-400 border-collapse">
-                                <thead className="bg-gray-100">
-                                  <tr>
-                                    <th className="border border-gray-400 px-4 py-2">
-                                      Total Students
-                                    </th>
-                                    <th className="border border-gray-400 px-4 py-2">
-                                      Submitted Fees
-                                    </th>
-                                    <th className="border border-gray-400 px-4 py-2">
-                                      Pending Fees
-                                    </th>
-                                  </tr>
-                                </thead>
-
-                                <tbody>
-                                  <tr>
-                                    <td className="border border-gray-400 px-4 py-2">
-                                      {studentsInBatch.length}
-                                    </td>
-
-                                    <td className="border border-gray-400 px-4 py-2 text-green-700 font-semibold">
-                                      {submittedFeesCount}
-                                    </td>
-
-                                    <td className="border border-gray-400 px-4 py-2 text-red-700">
-                                      {studentsInBatch.length - submittedFeesCount}
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
+                              <div className="overflow-x-auto w-full">
+                                <table className="min-w-[320px] w-full border border-gray-400 border-collapse">
+                                  <thead className="bg-gray-100">
+                                    <tr>
+                                      <th className="border border-gray-400 px-3 py-2 text-sm whitespace-nowrap">
+                                        Total Students
+                                      </th>
+                                      <th className="border border-gray-400 px-3 py-2 text-sm whitespace-nowrap">
+                                        Submitted Fees
+                                      </th>
+                                      <th className="border border-gray-400 px-3 py-2 text-sm whitespace-nowrap">
+                                        Pending Fees
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr>
+                                      <td className="border border-gray-400 px-3 py-2 text-center">
+                                        {studentsInBatch.length}
+                                      </td>
+                                      <td className="border border-gray-400 px-3 py-2 text-center text-green-700 font-semibold">
+                                        {submittedFeesCount}
+                                      </td>
+                                      <td className="border border-gray-400 px-3 py-2 text-center text-red-700">
+                                        {studentsInBatch.length - submittedFeesCount}
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
                             </div>
 
                             {/* Fee Type Submitted */}
-
                             <div>
-                              <h2 className="text-lg font-semibold mb-2">
+                              <h2 className="text-base sm:text-lg font-semibold mb-2">
                                 Fee Type Submitted
                               </h2>
-
-                              <table className="w-full border border-gray-400 border-collapse">
-                                <thead className="bg-gray-100">
-                                  <tr>
-                                    <th className="border px-4 py-2">
-                                      Registration Fee
-                                    </th>
-                                    <th className="border px-4 py-2">
-                                      ID Card Fee
-                                    </th>
-                                    <th className="border px-4 py-2">
-                                      Admission Fee
-                                    </th>
-                                    <th className="border px-4 py-2">
-                                      College Fee
-                                    </th>
-                                    <th className="border px-4 py-2">Exam Fee</th>
-                                    <th className="border px-4 py-2">CRF Fee</th>
-                                  </tr>
-                                </thead>
-
-                                <tbody>
-                                  <tr>
-                                    <td className="border px-4 py-2">
-                                      {feeTypeCounts.registration_fee || 0}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                      {feeTypeCounts.id_card_fee || 0}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                      {feeTypeCounts.admission_fee || 0}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                      {feeTypeCounts.college_fee || 0}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                      {feeTypeCounts.exam_fee || 0}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                      {feeTypeCounts.CRF || 0}
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
+                              <div className="overflow-x-auto w-full">
+                                <table className="min-w-[480px] w-full border border-gray-400 border-collapse">
+                                  <thead className="bg-gray-100">
+                                    <tr>
+                                      <th className="border px-3 py-2 text-xs whitespace-nowrap">Reg Fee</th>
+                                      <th className="border px-3 py-2 text-xs whitespace-nowrap">ID Card</th>
+                                      <th className="border px-3 py-2 text-xs whitespace-nowrap">Admission</th>
+                                      <th className="border px-3 py-2 text-xs whitespace-nowrap">College</th>
+                                      <th className="border px-3 py-2 text-xs whitespace-nowrap">Exam</th>
+                                      <th className="border px-3 py-2 text-xs whitespace-nowrap">CRF</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr>
+                                      <td className="border px-3 py-2 text-center">{feeTypeCounts.registration_fee || 0}</td>
+                                      <td className="border px-3 py-2 text-center">{feeTypeCounts.id_card_fee || 0}</td>
+                                      <td className="border px-3 py-2 text-center">{feeTypeCounts.admission_fee || 0}</td>
+                                      <td className="border px-3 py-2 text-center">{feeTypeCounts.college_fee || 0}</td>
+                                      <td className="border px-3 py-2 text-center">{feeTypeCounts.exam_fee || 0}</td>
+                                      <td className="border px-3 py-2 text-center">{feeTypeCounts.CRF || 0}</td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
                             </div>
 
                             {/* Fee Type Pending */}
-
                             <div>
-                              <h2 className="text-lg font-semibold mb-2">
+                              <h2 className="text-base sm:text-lg font-semibold mb-2">
                                 Fee Type Pending
                               </h2>
-
-                              <table className="w-full border border-gray-400 border-collapse">
-                                <thead className="bg-gray-100">
-                                  <tr>
-                                    <th className="border px-4 py-2">
-                                      Registration Fee
-                                    </th>
-                                    <th className="border px-4 py-2">
-                                      ID Card Fee
-                                    </th>
-                                    <th className="border px-4 py-2">
-                                      Admission Fee
-                                    </th>
-                                    <th className="border px-4 py-2">
-                                      College Fee
-                                    </th>
-                                    <th className="border px-4 py-2">Exam Fee</th>
-                                    <th className="border px-4 py-2">CRF Fee</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td className="border px-4 py-2">
-                                      {pendingFeeTypeCounts.registration_fee || 0}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                      {pendingFeeTypeCounts.id_card_fee || 0}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                      {pendingFeeTypeCounts.admission_fee || 0}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                      {pendingFeeTypeCounts.college_fee || 0}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                      {pendingFeeTypeCounts.exam_fee || 0}
-                                    </td>
-                                    <td className="border px-4 py-2">
-                                      {pendingFeeTypeCounts.CRF || 0}
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
+                              <div className="overflow-x-auto w-full">
+                                <table className="min-w-[480px] w-full border border-gray-400 border-collapse">
+                                  <thead className="bg-gray-100">
+                                    <tr>
+                                      <th className="border px-3 py-2 text-xs whitespace-nowrap">Reg Fee</th>
+                                      <th className="border px-3 py-2 text-xs whitespace-nowrap">ID Card</th>
+                                      <th className="border px-3 py-2 text-xs whitespace-nowrap">Admission</th>
+                                      <th className="border px-3 py-2 text-xs whitespace-nowrap">College</th>
+                                      <th className="border px-3 py-2 text-xs whitespace-nowrap">Exam</th>
+                                      <th className="border px-3 py-2 text-xs whitespace-nowrap">CRF</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr>
+                                      <td className="border px-3 py-2 text-center">{pendingFeeTypeCounts.registration_fee || 0}</td>
+                                      <td className="border px-3 py-2 text-center">{pendingFeeTypeCounts.id_card_fee || 0}</td>
+                                      <td className="border px-3 py-2 text-center">{pendingFeeTypeCounts.admission_fee || 0}</td>
+                                      <td className="border px-3 py-2 text-center">{pendingFeeTypeCounts.college_fee || 0}</td>
+                                      <td className="border px-3 py-2 text-center">{pendingFeeTypeCounts.exam_fee || 0}</td>
+                                      <td className="border px-3 py-2 text-center">{pendingFeeTypeCounts.CRF || 0}</td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -456,7 +403,8 @@ const Students = () => {
             )}
           </div>
         </div>
-      </div>  </div>
+      </div>
+    </div>
   );
 };
 

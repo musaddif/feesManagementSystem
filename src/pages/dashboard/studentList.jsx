@@ -385,7 +385,9 @@ const StudentList = () => {
     <div className="student-list-container">
       <Header />
       <div className="flex flex-1 overflow-hidden">
-        <SideBar />
+        <div className="flex-shrink-0 h-full">
+          <SideBar />
+        </div>
         <main className="student-list-content">
 
           {/* Page Header */}
@@ -627,7 +629,7 @@ const StudentList = () => {
 
           {/* Footer */}
           <footer className="list-footer">
-            <div className="download-btn-wrapper">
+            <div className="download-btn-wrapper w-full sm:w-auto">
               <Button
                 className="w-full flex items-center justify-center gap-2"
                 onClick={downloadReport}

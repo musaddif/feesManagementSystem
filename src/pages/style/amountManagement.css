@@ -1,5 +1,5 @@
 .amount-management-container {
-    padding: 2rem;
+    padding: 1.5rem;
 }
 
 .balance-card {
@@ -24,6 +24,7 @@
     gap: 1rem;
     margin-bottom: 2rem;
     border-bottom: 2px solid #e5e7eb;
+    flex-wrap: wrap;
 }
 
 .tab-button {
@@ -73,6 +74,7 @@
     display: flex;
     gap: 1.5rem;
     margin-top: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .transaction-table {
@@ -103,4 +105,43 @@
 .type-expense {
     color: #dc2626;
     font-weight: 600;
+}
+
+/* ── Mobile Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .amount-management-container {
+        padding: 1rem;
+    }
+
+    .balance-amount {
+        font-size: 2rem;
+    }
+
+    .balance-card {
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .tab-button {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .form-container {
+        padding: 1rem;
+    }
+
+    /* Transaction table: horizontal scroll */
+    .transaction-table th,
+    .transaction-table td {
+        padding: 0.625rem 0.75rem;
+        font-size: 0.8125rem;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .balance-amount {
+        font-size: 1.625rem;
+    }
 }

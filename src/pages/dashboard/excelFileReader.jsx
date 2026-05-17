@@ -106,13 +106,15 @@ function ExcelFileReader() {
     <div className="flex flex-col h-screen overflow-hidden">
       <Header />
       <div className="flex flex-1 overflow-hidden">
-        <SideBar />
+        <div className="flex-shrink-0 h-full">
+          <SideBar />
+        </div>
         <div className="flex-1 overflow-y-auto excel-reader-container">
           <div className="max-w-6xl mx-auto">
             {/* Page Header */}
-            <div className="border-b border-gray-200 pb-6 mb-8 flex justify-between items-end">
+            <div className="border-b border-gray-200 pb-6 mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">
               <div>
-                <h1 className="text-3xl font-bold text-gray-800">Bulk Student Import</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Bulk Student Import</h1>
                 <p className="text-gray-500 mt-2">Upload student data efficiently using Excel spreadsheets.</p>
               </div>
             </div>

@@ -6,94 +6,109 @@ import {
   FaSignOutAlt,
   FaWallet,
   FaCog,
+  FaTimes,
 } from "react-icons/fa";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import Button from "./button/button";
-import { IoArrowBack } from "react-icons/io5";
+import { Link, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { unwrapResult } from "@reduxjs/toolkit";
 import { auth_logout } from "../store/Thunk/authThunk";
+import { useSidebar } from "../context/SidebarContext";
+
+const NAV_LINKS = [
+  { to: "/students", icon: <FaClipboardList size={20} />, label: "Students" },
+  { to: "/excelReader", icon: <FaUserPlus size={20} />, label: "Add Students" },
+  { to: "/feeSubmission", icon: <FaMoneyBillWave size={20} />, label: "Fee Form" },
+  { to: "/studentList", icon: <FaListUl size={20} />, label: "Report" },
+  { to: "/amountManagement", icon: <FaWallet size={20} />, label: "Finance" },
+  { to: "/admin/adminDashboard", icon: <FaCog size={20} />, label: "Setting" },
+];
 
 const SideBar = () => {
   const location = useLocation();
   const path = location.pathname;
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { isSidebarOpen, closeSidebar } = useSidebar();
 
   const handleLogOut = async () => {
-    // Popup confirmation before logout
-    const confirmLogout = window.confirm(
-      "Are you sure you want to logout?"
-    );
-
+    const confirmLogout = window.confirm("Are you sure you want to logout?");
     if (!confirmLogout) return;
 
     try {
       const resultAction = await dispatch(auth_logout());
       unwrapResult(resultAction);
-
       localStorage.removeItem("authToken");
       sessionStorage.clear();
-
       window.location.replace("/");
     } catch (error) {
       console.error("Logout failed:", error.message || error);
     }
   };
 
+  const handleLinkClick = () => {
+    // Close drawer on mobile after navigation
+    closeSidebar();
+  };
+
   return (
-    <div className="h-full min-w-32 bg-[#b8860b] rounded-e-lg items-center p-8 flex flex-col">
-      <ul className="text-white space-y-8 mt-14">
+    <>
+      {/* Mobile overlay backdrop */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={closeSidebar}
+          aria-hidden="true"
+        />
+      )}
 
-        <li className={`${path.includes("/students") ? "text-black" : ""}`}>
-          <Link to="/students" className="flex gap-2 font-semibold">
-            <FaClipboardList size={20} />
-            Students
-          </Link>
-        </li>
+      {/* Sidebar panel */}
+      <aside
+        className={`
+          fixed md:static inset-y-0 left-0 z-40
+          flex flex-col
+          h-full min-w-[200px] w-52
+          bg-[#b8860b] rounded-e-lg
+          transition-transform duration-300 ease-in-out
+          md:translate-x-0 md:flex
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
+        {/* Close button — mobile only */}
+        <div className="flex justify-end p-4 md:hidden">
+          <button
+            onClick={closeSidebar}
+            className="text-white/80 hover:text-white transition-colors p-1"
+            aria-label="Close sidebar"
+          >
+            <FaTimes size={22} />
+          </button>
+        </div>
 
-        <li className={`${path.includes("/excelReader") ? "text-black" : ""}`}>
-          <Link to="/excelReader" className="flex gap-2 font-semibold">
-            <FaUserPlus size={20} />
-            Add Students
-          </Link>
-        </li>
+        <nav className="flex-1 px-6 pb-6">
+          <ul className="text-white space-y-6 mt-4 md:mt-14">
+            {NAV_LINKS.map(({ to, icon, label }) => (
+              <li
+                key={to}
+                className={`${path.includes(to) ? "text-black" : ""}`}
+              >
+                <Link
+                  to={to}
+                  className="flex gap-2 font-semibold items-center hover:text-black/70 transition-colors"
+                  onClick={handleLinkClick}
+                >
+                  {icon}
+                  {label}
+                </Link>
+              </li>
+            ))}
 
-        <li className={`${path.includes("/feeSubmission") ? "text-black" : ""}`}>
-          <Link to="/feeSubmission" className="flex gap-2 font-semibold">
-            <FaMoneyBillWave size={20} />
-            Fee Form
-          </Link>
-        </li>
-
-        <li className={`${path.includes("/studentList") ? "text-black" : ""}`}>
-          <Link to="/studentList" className="flex gap-2 font-semibold">
-            <FaListUl size={20} />
-            Report
-          </Link>
-        </li>
-
-        <li className={`${path.includes("/amountManagement") ? "text-black" : ""}`}>
-          <Link to="/amountManagement" className="flex gap-2 font-semibold">
-            <FaWallet size={20} />
-            Finance
-          </Link>
-        </li>
-
-        <li className={`${path.includes("/admin/adminDashboard") ? "text-black" : ""}`}>
-          <Link to="/admin/adminDashboard" className="flex gap-2 font-semibold">
-            <FaCog size={20} />
-            Setting
-          </Link>
-        </li>
-
-        <li className="flex gap-2 font-semibold cursor-pointer">
-          <FaSignOutAlt size={20} />
-          <button onClick={handleLogOut}>Logout</button>
-        </li>
-
-      </ul>
-    </div>
+            <li className="flex gap-2 font-semibold cursor-pointer text-white hover:text-black/70 transition-colors items-center">
+              <FaSignOutAlt size={20} />
+              <button onClick={handleLogOut}>Logout</button>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+    </>
   );
 };
 

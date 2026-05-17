@@ -188,17 +188,17 @@ const Setting = () => {
           <SideBar />
         </div>
         <div className="bg-gradient-to-br from-gray-50 to-gray-100 flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-4xl mx-auto ">
+          <div className="max-w-4xl mx-auto">
             <div className="max-w-4xl mx-auto">
-              <div className="flex flex-row justify-between items-start gap-4">
-                <div className="mb-8">
-                  <h1 className="text-3xl font-bold text-gray-800">Fee Setting</h1>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
+                <div className="mb-4 sm:mb-8">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Fee Setting</h1>
                   <p className="text-gray-600 mt-2">
                     Configure baseline fee amounts for different academic structures.
                   </p>
                 </div>
 
-                <div className="flex flex-row items-center gap-4 mt-14">
+                <div className="flex flex-row items-center gap-4 sm:mt-14">
                   <label className="block font-semibold">Select Study Level</label>
                   <select
                     value={studyLevel}
