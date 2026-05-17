@@ -156,7 +156,6 @@ const Students = () => {
       }
     });
 
-    // Calculate pending fees per type
     const pendingCounts = {};
     const allFeeTypes = [
       "registration_fee",
