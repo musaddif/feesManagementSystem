@@ -287,23 +287,23 @@ const FeeSubmission = () => {
         <div className="flex-shrink-0 h-full z-10">
           <SideBar />
         </div>
-        <div className=" flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="w-full shadow-xl p-6 md:p-8 rounded-xl bg-white/80 backdrop-blur-sm min-h-[80vh]">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-8">
+          <div className="w-full shadow-xl p-4 sm:p-6 md:p-8 rounded-xl bg-white/80 backdrop-blur-sm min-h-[80vh]">
             <div className="border-b pb-4 mb-6">
-              <h1 className="text-3xl font-bold text-gray-800">Bulk Fee Submission</h1>
-              <h2 className="text-lg text-gray-600 mt-1">
+              <h1 className="text-xl sm:text-3xl font-bold text-gray-800">Bulk Fee Submission</h1>
+              <h2 className="text-sm sm:text-lg text-gray-600 mt-1">
                 {!isInter ? `Department of ${selectedBSDepartment || "..."}` : `Class: ${interClass || selectedDeprt?.class_name || "..."}`}
               </h2>
             </div>
 
             <div className="space-y-8">
               {/* Filters Section (Always Visible) */}
-              <div className="bg-gray-50 p-4 rounded-lg shadow-inner flex flex-wrap gap-6 items-center">
+              <div className="bg-gray-50 p-4 rounded-lg shadow-inner grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {!isInter && (
                   <div className="flex flex-col gap-1">
                     <label className="text-sm font-semibold text-gray-700">Department</label>
                     <select
-                      className="dropDown min-w-[200px]"
+                      className="dropDown w-full"
                       onChange={(e) => setSelectedBSDepartment(e.target.value)}
                       value={selectedBSDepartment}
                     >
@@ -318,7 +318,7 @@ const FeeSubmission = () => {
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-semibold text-gray-700">Batch Filter</label>
                   <select
-                    className="dropDown min-w-[200px]"
+                    className="dropDown w-full"
                     onChange={(e) => setBatchValue(e.target.value)}
                     value={batchValue}
                   >
@@ -336,7 +336,7 @@ const FeeSubmission = () => {
                     {!isInter ? "Semester" : " Class"}
                   </label>
                   <select
-                    className="dropDown min-w-[200px]"
+                    className="dropDown w-full"
                     onChange={(e) => !isInter ? setStudentSemester(e.target.value) : setInterClass(e.target.value)}
                     value={!isInter ? studentSemester : interClass}
                   >
@@ -410,26 +410,26 @@ const FeeSubmission = () => {
               </div>
 
               {/* Summary & Submit Action */}
-              <div className="bg-[#fdf9f1] p-4 rounded-lg border border-[#e6d09a] flex flex-wrap gap-6 items-center justify-between">
-                <div className="flex gap-8">
-                  <div className="text-center">
-                    <p className="text-sm text-gray-500">Selected Students</p>
-                    <p className="text-2xl font-bold text-[#b8860b]">{selectedStudents.length}</p>
+              <div className="bg-[#fdf9f1] p-4 rounded-lg border border-[#e6d09a] flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-center justify-between">
+                <div className="flex flex-wrap gap-4 sm:gap-8 w-full sm:w-auto">
+                  <div className="text-center flex-1 min-w-[80px]">
+                    <p className="text-xs sm:text-sm text-gray-500">Selected Students</p>
+                    <p className="text-xl sm:text-2xl font-bold text-[#b8860b]">{selectedStudents.length}</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm text-gray-500">Total Per Student</p>
-                    <p className="text-2xl font-bold text-green-600">Rs. {totalFee.toLocaleString()}</p>
+                  <div className="text-center flex-1 min-w-[80px]">
+                    <p className="text-xs sm:text-sm text-gray-500">Total Per Student</p>
+                    <p className="text-xl sm:text-2xl font-bold text-green-600">Rs. {totalFee.toLocaleString()}</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm text-gray-500">Grand Total</p>
-                    <p className="text-2xl font-bold text-blue-600">Rs. {(totalFee * selectedStudents.length).toLocaleString()}</p>
+                  <div className="text-center flex-1 min-w-[80px]">
+                    <p className="text-xs sm:text-sm text-gray-500">Grand Total</p>
+                    <p className="text-xl sm:text-2xl font-bold text-blue-600">Rs. {(totalFee * selectedStudents.length).toLocaleString()}</p>
                   </div>
                 </div>
                 <Button
                   onClick={bulkSubmit}
                   loading={globalLoading}
                   loadingText="Processing..."
-                  className="!px-8 !py-3 !text-lg shadow-md hover:shadow-lg"
+                  className="w-full sm:w-auto !px-8 !py-3 !text-lg shadow-md hover:shadow-lg"
                   disabled={selectedStudents.length === 0 || totalFee === 0}
                 >
                   Submit Bulk Fees

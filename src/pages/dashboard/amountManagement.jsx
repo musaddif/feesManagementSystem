@@ -109,11 +109,13 @@ const AmountManagement = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden  ">
+    <div className="flex flex-col h-screen overflow-hidden">
       <Header />
       <div className="flex flex-1 overflow-hidden">
-        <SideBar />
-        <div className="flex-1 overflow-y-auto amount-management-container  ">
+        <div className="flex-shrink-0 h-full">
+          <SideBar />
+        </div>
+        <div className="flex-1 overflow-y-auto amount-management-container">
           <h1 className="text-2xl font-bold mb-6 text-center">Amount Management</h1>
 
           {/* Dashboard Summary Cards */}
@@ -248,7 +250,7 @@ const AmountManagement = () => {
                   type="submit"
                   loading={loading}
                   loadingText="Processing..."
-                  className="w-1/4 mt-4 "
+                  className="w-full sm:w-1/4 mt-4"
                 >
                   {activeTab === "add-money" ? "Earned" : "Make Payment"}
                 </Button>
@@ -261,7 +263,7 @@ const AmountManagement = () => {
               <span className="p-2 bg-red-100 text-red-600 rounded-lg">💸</span>
               Deposit Cash to University Account
             </h2>
-            <form onSubmit={handleExpenseSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+            <form onSubmit={handleExpenseSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 items-end">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-gray-600">Amount (Rs.)</label>
                 <input
@@ -289,7 +291,7 @@ const AmountManagement = () => {
                 type="submit"
                 loading={loading}
                 loadingText="Saving..."
-                className="w-3/4 ml-20 "
+                className="w-full sm:w-3/4 sm:ml-0"
               >
                 Deposit
               </Button>
