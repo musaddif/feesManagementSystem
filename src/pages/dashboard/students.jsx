@@ -53,11 +53,10 @@ const Students = () => {
         const currentStudents = selectedDeprt?.study_level === "BS" ? bsStudents : interStudents;
         if (currentStudents && currentStudents.length > 0) {
           const batches = [...new Set(currentStudents.map((item) => item.batch))];
-          setBatchArr(batches);
+          setBatchArr((prev) => batches.length > 0 ? batches : prev);
           setInitialLoadDone(true);
         } else if (globalLoading === false) {
           // If loading finished and still no students, we are done loading
-          setBatchArr([]);
           setInitialLoadDone(true);
         }
       } catch (error) {
@@ -115,25 +114,39 @@ const Students = () => {
       (student) => student.batch === openBatch,
     );
 
+    const isBS = selectedDeprt?.study_level === "BS";
+    const targetSem = isBS ? studentSemester : interClass;
+
     let submittedStudentCount = 0;
     const feeCounts = {};
     studentsInBatch.forEach((student) => {
-      if (student?.feeSubmission.length > 0) {
-        if (
-          student?.feeSubmission?.[0]?.fee_type?.college_fee &&
-          student?.feeSubmission?.[0]?.fee_type?.id_card_fee &&
-          student?.feeSubmission?.[0]?.fee_type?.exam_fee &&
-          student?.feeSubmission?.[0]?.fee_type?.registration_fee &&
-          student?.feeSubmission?.[0]?.fee_type?.CRF &&
-          student?.feeSubmission?.[0]?.fee_type?.admission_fee
-        ) {
-          submittedStudentCount += 1;
+      if (student?.feeSubmission && student.feeSubmission.length > 0) {
+        const submission = (targetSem && targetSem !== "All" && targetSem !== "")
+          ? student.feeSubmission.find((fs) => fs.semester === targetSem)
+          : student.feeSubmission[0];
+
+        if (submission) {
+          const ft = submission.fee_type || {};
+          const isPaidAll =
+            ft.college_fee &&
+            ft.exam_fee &&
+            ft.registration_fee &&
+            ft.CRF &&
+            ft.admission_fee &&
+            (isBS
+              ? ["2nd", "4th", "6th", "8th", "10th"].includes(submission.semester) || ft.id_card_fee
+              : ft.id_card_fee);
+
+          if (isPaidAll) {
+            submittedStudentCount += 1;
+          }
         }
 
-        student.feeSubmission.forEach((submission) => {
-          if (!submission?.fee_type) return;
+        student.feeSubmission.forEach((sub) => {
+          if (targetSem && targetSem !== "All" && targetSem !== "" && sub.semester !== targetSem) return;
+          if (!sub?.fee_type) return;
 
-          Object.entries(submission?.fee_type).forEach(
+          Object.entries(sub?.fee_type).forEach(
             ([feeType, isSubmitted]) => {
               if (isSubmitted) {
                 feeCounts[feeType] = (feeCounts[feeType] || 0) + 1;
@@ -162,7 +175,7 @@ const Students = () => {
     setSubmittedFeesCount(submittedStudentCount);
     setFeeTypeCounts(feeCounts);
     setPendingFeeTypeCounts(pendingCounts);
-  }, [students, openBatch, studentSemester]);
+  }, [students, openBatch, studentSemester, interClass, selectedDeprt]);
   useEffect(() => {
     if (!selectedDeprt) return;
 
@@ -256,7 +269,7 @@ const Students = () => {
                                 <option value="All">All Semesters</option>
                                 {semester.map((item, index) => (
                                   <option key={index} value={item}>
-                                    {item}
+                                    {item} Semester
                                   </option>
                                 ))}
                               </select>
@@ -277,7 +290,7 @@ const Students = () => {
                                 ))}
                               </select>
 
-                              <label>Class : </label>
+                              {/* <label>Part: </label>
                               <select
                                 className="dropDown w-28"
                                 onChange={(e) => setInterClass(e.target.value)}
@@ -289,17 +302,10 @@ const Students = () => {
                                     {item}
                                   </option>
                                 ))}
-                              </select>
+                              </select> */}
                             </>
                           )}
 
-                          {studentsInBatch.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-10 mt-4 rounded-lg bg-gray-50 border border-dashed border-gray-300">
-                              <div className="text-4xl mb-3">📭</div>
-                              <p className="text-base font-semibold text-gray-500">No students found for selected filters</p>
-                              <p className="text-xs text-gray-400 mt-1">Try changing the semester, class, or department filter.</p>
-                            </div>
-                          ) : (
                           <div className="space-y-6 mt-4">
                             <div>
                               <h2 className="text-lg font-semibold mb-2">
@@ -442,7 +448,6 @@ const Students = () => {
                               </table>
                             </div>
                           </div>
-                          )}
                         </div>
                       )}
                     </div>

@@ -15,7 +15,7 @@ import { FaSearch, FaDownload } from "react-icons/fa";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import Button from "../../component/button/button";
-import { semester, intermediateClasses } from "../../constant/lists";
+import { semester, inter_class } from "../../constant/lists";
 import Header from "../../component/header";
 import { TableSkeleton } from "../../component/loader/skeleton";
 
@@ -421,31 +421,29 @@ const StudentList = () => {
 
               <div className="filter-group">
                 {/* 1. Department */}
-                {isBS && (
-                  <div className="filter-item">
-                    <label className="filter-label">Department</label>
-                    <select
-                      id="department-select"
-                      className="filter-select"
-                      value={
-                        selectedDept
-                          ? String(selectedDept.id ?? selectedDept.department_name ?? selectedDept.class_name)
-                          : ""
-                      }
-                      onChange={handleDeptChange}
-                      disabled={!studyLevel || departmentOptions.length === 0}
-                    >
-                      <option value="">
-                        {!studyLevel ? "— Configure Settings First —" : "All Departments"}
-                      </option>
-                      {departmentOptions.map((d) => {
-                        const val = String(d.id ?? d.department_name ?? d.class_name);
-                        const label = d.department_name || d.class_name;
-                        return <option key={val} value={val}>{label}</option>;
-                      })}
-                    </select>
-                  </div>
-                )}
+                <div className="filter-item">
+                  <label className="filter-label">{isBS ? "Department" : "Class"}</label>
+                  <select
+                    id="department-select"
+                    className="filter-select"
+                    value={
+                      selectedDept
+                        ? String(selectedDept.id ?? selectedDept.department_name ?? selectedDept.class_name)
+                        : ""
+                    }
+                    onChange={handleDeptChange}
+                    disabled={!studyLevel || departmentOptions.length === 0}
+                  >
+                    <option value="">
+                      {!studyLevel ? "— Configure Settings First —" : "All Departments"}
+                    </option>
+                    {departmentOptions.map((d) => {
+                      const val = String(d.id ?? d.department_name ?? d.class_name);
+                      const label = d.department_name || d.class_name;
+                      return <option key={val} value={val}>{label}</option>;
+                    })}
+                  </select>
+                </div>
                 {/* 2. Semester / Class — always enabled when study level known */}
                 {isBS ? (
                   <div className="filter-item">
@@ -459,13 +457,13 @@ const StudentList = () => {
                     >
                       <option value="">All Semesters</option>
                       {semester.filter((s) => s !== "All").map((item, i) => (
-                        <option key={i} value={item}>{item}</option>
+                        <option key={i} value={item}>{item} Semester</option>
                       ))}
                     </select>
                   </div>
                 ) : studyLevel === "Intermediate" ? (
                   <div className="filter-item">
-                    <label className="filter-label">Class</label>
+                    <label className="filter-label">Part</label>
                     <select
                       id="inter-class-select"
                       className="filter-select"
@@ -473,8 +471,8 @@ const StudentList = () => {
                       onChange={(e) => setInterClass(e.target.value)}
                       disabled={!studyLevel}
                     >
-                      <option value="">All Classes</option>
-                      {intermediateClasses.map((item, i) => (
+                      <option value="">All Parts</option>
+                      {inter_class.map((item, i) => (
                         <option key={i} value={item}>{item}</option>
                       ))}
                     </select>

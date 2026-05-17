@@ -660,8 +660,11 @@ export const getInterClassStudents = createAsyncThunk(
         rollno,
          inter(class_name),
         feeSubmission(*)`
-        )
-        .eq("department", _request?.deprt);
+        );
+
+      if (_request?.deprt) {
+        query = query.eq("department", _request.deprt);
+      }
 
       if (_request?.batchValue) {
         query = query.eq("batch", _request.batchValue);

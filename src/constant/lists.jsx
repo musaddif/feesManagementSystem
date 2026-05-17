@@ -46,7 +46,7 @@ export const semester = [
   "9th",
   "10th",
 ];
-export const inter_class = ["Part-I", "Part-II"];
+export const inter_class = ["Part I", "Part II"];
 export const intermediateClasses = [
   "Medical I",
   "Medical II",

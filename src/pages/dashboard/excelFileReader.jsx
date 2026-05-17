@@ -11,10 +11,12 @@ import SideBar from "../../component/sideBar";
 import Header from "../../component/header";
 
 import { FaCloudUploadAlt, FaTrash, FaFileExcel, FaInfoCircle } from "react-icons/fa";
+import Loader from "../../component/loader/loader";
 
 function ExcelFileReader() {
   const dispatch = useDispatch();
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -57,6 +59,8 @@ function ExcelFileReader() {
   const submitStudentList = async () => {
     if (data.length === 0) return;
 
+    setLoading(true);
+
     try {
       const invalid = data.filter(
         (row) =>
@@ -68,6 +72,7 @@ function ExcelFileReader() {
 
       if (invalid.length > 0) {
         alert("Some rows are missing required fields (Name, Registration No, Batch, or Department).");
+        setLoading(false);
         return;
       }
 
@@ -82,6 +87,8 @@ function ExcelFileReader() {
     } catch (err) {
       console.error("Insert failed:", err);
       alert("Submission failed. Please check the data format.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -145,9 +152,14 @@ function ExcelFileReader() {
                   </table>
                 </div>
 
-                <div className="flex justify-center mt-8">
-                  <Button onClick={submitStudentList} className="px-20 py-4 text-lg">
-                    Submit Student List
+                <div className="flex flex-col items-center justify-center mt-8 gap-4">
+                  {loading && (
+                    <div className="flex justify-center items-center py-4">
+                      {/* <Loader />/ */}
+                    </div>
+                  )}
+                  <Button onClick={submitStudentList} className="px-20 py-4 text-lg" disabled={loading}>
+                    {loading ? "Submitting..." : "Submit Student List"}
                   </Button>
                 </div>
               </div>
