@@ -34,7 +34,7 @@ export const feesTypes = [
   "Repeat Paper Fee",
 ];
 export const semester = [
-  "All",
+
   "1st",
   "2nd",
   "3rd",

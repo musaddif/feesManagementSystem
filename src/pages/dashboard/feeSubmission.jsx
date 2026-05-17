@@ -333,7 +333,7 @@ const FeeSubmission = () => {
 
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-semibold text-gray-700">
-                    {!isInter ? "Target Semester" : "Target Class"}
+                    {!isInter ? "Semester" : " Class"}
                   </label>
                   <select
                     className="dropDown min-w-[200px]"

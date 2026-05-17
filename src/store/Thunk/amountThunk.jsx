@@ -42,12 +42,12 @@ export const fetchTotalAmount = createAsyncThunk(
         } else if (tx.type === "expense") {
           // Identify Withdrawals (Deposit Cash to University Account) vs normal Expenses
           if (tx.title.startsWith("[WITHDRAW_CASH]")) {
-             calculatedCashInHand -= amt;
+            calculatedCashInHand -= amt;
           } else if (tx.title.startsWith("[EXPENSE]")) {
-             calculatedTotalBalance -= amt;
+            calculatedTotalBalance -= amt;
           } else {
-             // Fallback for old expense records (if any)
-             calculatedTotalBalance -= amt;
+            // Fallback for old expense records (if any)
+            calculatedTotalBalance -= amt;
           }
         }
       });
@@ -121,7 +121,7 @@ export const addExpenseThunk = createAsyncThunk(
     try {
       dispatch(setLoading(true));
       const { error } = await supabase.from("amount_transactions").insert({
-        title: "[EXPENSE] " + amountData.title,
+        title: "" + amountData.title,
         type: "expense",
         amount: amountData.amount,
         payment_method: amountData.paymentMethod,
@@ -150,7 +150,7 @@ export const withdrawCashThunk = createAsyncThunk(
     try {
       dispatch(setLoading(true));
       const { error } = await supabase.from("amount_transactions").insert({
-        title: "[WITHDRAW_CASH] " + description,
+        title: "" + description,
         type: "expense",
         amount: amount,
         payment_method: "Cash",
