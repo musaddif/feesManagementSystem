@@ -11,8 +11,9 @@ import { useEffect, useState, useMemo } from "react";
 import "../../constant/applicationStyle.css";
 import "../style/excelFileReader.css";
 import { useNavigate } from "react-router-dom";
-import { semester, inter_class } from "../../constant/lists";
-// import Header from "../../component/Header"
+import { semester, inter_class } from "../../co
+import Header from "../../component/header"
+
 import { Skeleton } from "../../component/loader/skeleton";
 import Header from "../../component/header";
 const Students = () => {
