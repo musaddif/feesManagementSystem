@@ -8,13 +8,18 @@ import NotFound from "../pages/auth/notFound";
 import ExcelFileReader from "../pages/dashboard/excelFileReader";
 import StudentList from "../pages/dashboard/studentList";
 import ProtectedRoute from "./ProtectedRoute";
-import AdminDashboard from "../pages/admin/AdminDashboard";
+import Setting from "../pages/admin/Setting";
 import Report from "../pages/dashboard/report";
 import Students from "../pages/dashboard/students";
+import AmountManagement from "../pages/dashboard/amountManagement";
+
+
 const Layout = () => {
   return (
     <Routes>
-      <Route path="/" element={<Login />} />
+      <Route path="/" element={
+        <Login />
+      } />
       <Route
         path="/dashboard"
         element={
@@ -59,7 +64,7 @@ const Layout = () => {
         path="/admin/adminDashboard"
         element={
           <ProtectedRoute>
-            <AdminDashboard />
+            <Setting />
           </ProtectedRoute>
         }
       />
@@ -76,6 +81,14 @@ const Layout = () => {
         element={
           <ProtectedRoute>
             <Students />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/amountManagement"
+        element={
+          <ProtectedRoute>
+            <AmountManagement />
           </ProtectedRoute>
         }
       />

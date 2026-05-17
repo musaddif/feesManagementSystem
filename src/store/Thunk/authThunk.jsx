@@ -26,9 +26,22 @@ export const login = createAsyncThunk(
 );
 export const auth_logout = createAsyncThunk(
   "auth_logout",
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch }) => {
     try {
-      return true;
+      // Method 1: Clear persisted store (Recommended)
+      dispatch({ type: 'persist/PERSIST', payload: null });
+
+      // Method 2: Manually clear localStorage/sessionStorage
+      localStorage.removeItem('persist:auth');  // Removes persisted auth data
+
+
+      // Method 3: Purge all persisted state (if you want complete reset)
+      // await persistor.purge(); // You'll need access to persistor
+
+      // Clear any other auth data
+      sessionStorage.clear();
+
+      return { success: true, message: "Logged out successfully" };
     } catch (err) {
       return rejectWithValue(
         err.message || "An unknown error occurred during logout."
