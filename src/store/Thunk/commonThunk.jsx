@@ -411,24 +411,50 @@ export const studentList = createAsyncThunk(
   async (list, { dispatch, rejectWithValue }) => {
     try {
       dispatch(setLoading(true));
-      // console.log("list", list);
+
+      // 1. Fetch all valid department names from DB
+      const { data: deptData, error: deptError } = await supabase
+        .from("department")
+        .select("department_name");
+      if (deptError) throw deptError;
+
+      const validDepts = deptData.map((d) => d.department_name);
+
+      // 2. Map each row's Department to an exact DB name (case-insensitive)
+      const unmatchedDepts = [];
+      const mappedList = list.map((item) => {
+        const excelDept = (item.Department || "").trim();
+        const matched = validDepts.find(
+          (d) => d.toLowerCase() === excelDept.toLowerCase()
+        );
+        if (!matched) unmatchedDepts.push(excelDept || "(empty)");
+        return {
+          name: item.Name,
+          father_name: item["Father Name"],
+          batch: item.Batch,
+          registration_number: item["Registration No"],
+          department: matched || excelDept, // fallback keeps original so error is visible
+          rollno: item.RollNo,
+        };
+      });
+
+      // 3. Reject early if any department names are invalid
+      if (unmatchedDepts.length > 0) {
+        const unique = [...new Set(unmatchedDepts)];
+        return rejectWithValue(
+          `Unknown department(s) in Excel: "${unique.join('", "')}". ` +
+          `Valid names are: ${validDepts.join(", ")}.`
+        );
+      }
+
+      // 4. Insert with validated department names
       const { data, error } = await supabase
         .from("student")
-        .insert(
-          list.map((item) => ({
-            name: item.Name,
-            father_name: item["Father Name"],
-            batch: item.Batch,
-            registration_number: item["Registration No"],
-            department: item.Department,
-            rollno: item.RollNo,
-          })),
-        )
+        .insert(mappedList)
         .select();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
+
       dispatch(addStudents(data));
       return data;
     } catch (err) {
@@ -440,28 +466,54 @@ export const studentList = createAsyncThunk(
   },
 );
 export const interStudentList = createAsyncThunk(
-  "studentList",
+  "interStudentList",
   async (list, { dispatch, rejectWithValue }) => {
     try {
       dispatch(setLoading(true));
-      // console.log("list", list);
+
+      // 1. Fetch all valid inter department/class names from DB
+      const { data: interData, error: interError } = await supabase
+        .from("inter")
+        .select("class_name");
+      if (interError) throw interError;
+
+      const validClasses = interData.map((d) => d.class_name);
+
+      // 2. Map each row's Department to an exact DB class_name (case-insensitive)
+      const unmatchedDepts = [];
+      const mappedList = list.map((item) => {
+        const excelDept = (item.Department || "").trim();
+        const matched = validClasses.find(
+          (c) => c.toLowerCase() === excelDept.toLowerCase()
+        );
+        if (!matched) unmatchedDepts.push(excelDept || "(empty)");
+        return {
+          name: item.Name,
+          father_name: item["Father Name"],
+          batch: item.Batch,
+          inter_student_registration: item["Registration No"],
+          department: matched || excelDept,
+          rollno: item.RollNo,
+        };
+      });
+
+      // 3. Reject early if any department names are invalid
+      if (unmatchedDepts.length > 0) {
+        const unique = [...new Set(unmatchedDepts)];
+        return rejectWithValue(
+          `Unknown class(es) in Excel: "${unique.join('", "')}". ` +
+          `Valid names are: ${validClasses.join(", ")}.`
+        );
+      }
+
+      // 4. Insert with validated class names
       const { data, error } = await supabase
         .from("interStudent")
-        .insert(
-          list.map((item) => ({
-            name: item.Name,
-            father_name: item["Father Name"],
-            batch: item.Batch,
-            inter_student_registration: item["Registration No"],
-            department: item.Department,
-            rollno: item.RollNo,
-          })),
-        )
+        .insert(mappedList)
         .select();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
+
       dispatch(addStudents(data));
       return data;
     } catch (err) {
