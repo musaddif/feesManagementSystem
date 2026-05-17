@@ -6,10 +6,13 @@ const initialState = {
   addStudentList: [],
   getAllStudent: [],
   getFee: [],
+  allFees: [],
   interDepartments: [],
   getAllInterStudent: [],
   financeReport: [],
   reportData: [],
+  loading: false,
+  error: null,
 };
 
 export const commonSlice = createSlice({
@@ -45,6 +48,10 @@ export const commonSlice = createSlice({
       ...state,
       getFee: action.payload,
     }),
+    setAllFees: (state, action) => ({
+      ...state,
+      allFees: action.payload,
+    }),
     interDeprt: (state, action) => ({
       ...state,
       interDepartments: action.payload,
@@ -56,6 +63,14 @@ export const commonSlice = createSlice({
     setReportData: (state, action) => ({
       ...state,
       reportData: action.payload,
+    }),
+    setLoading: (state, action) => ({
+      ...state,
+      loading: action.payload,
+    }),
+    setError: (state, action) => ({
+      ...state,
+      error: action.payload,
     }),
   },
 });
@@ -69,7 +84,10 @@ export const {
   addStudents,
   getstudentList,
   getFeeSlice,
+  setAllFees,
   interDeprt,
   setReportData,
+  setLoading,
+  setError,
 } = commonSlice.actions;
 export default commonSlice.reducer;

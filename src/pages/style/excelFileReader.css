@@ -1,25 +1,92 @@
-.excelInput {
-  @apply w-full px-10 h-2/4  bg-gradient-to-br
-   from-gray-800 via-gray-900 to-black 
-   text-white flex rounded-lg justify-center
-   
-    items-center m-[40%];
+.excel-reader-container {
+    padding: 2rem;
+    background-color: #f9fafb;
+    min-height: 100%;
 }
-.tableStyle {
-  @apply w-full
-   h-4/5
-  
-    bg-white;
+
+.upload-area {
+    border: 2px dashed #b8860b;
+    border-radius: 1rem;
+    padding: 3rem;
+    text-align: center;
+    background-color: white;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 }
-.tableRow {
-  @apply border-b border-gray-300 hover:bg-gray-100 transition-colors;
+
+.upload-area:hover {
+    background-color: #fffbeb;
+    border-color: #291e05;
 }
-.tableCell {
-  @apply px-6 py-3 text-gray-700;
+
+.upload-icon {
+    font-size: 3rem;
+    color: #b8860b;
+    margin-bottom: 1rem;
 }
-.tableData {
-  @apply p-4
-   
-  text-center
-  gap-24;
+
+.upload-text {
+    font-size: 1.125rem;
+    color: #374151;
+    font-weight: 500;
+}
+
+.upload-subtext {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+}
+
+.preview-container {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.preview-table th {
+    background-color: #f3f4f6;
+    color: #374151;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.preview-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    color: #4b5563;
+}
+
+.preview-table tr:hover {
+    background-color: #f9fafb;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+}
+
+.template-link {
+    color: #b8860b;
+    text-decoration: underline;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.template-link:hover {
+    color: #291e05;
 }
