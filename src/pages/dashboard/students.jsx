@@ -12,7 +12,7 @@ import "../../constant/applicationStyle.css";
 import "../style/excelFileReader.css";
 import { useNavigate } from "react-router-dom";
 import { semester, inter_class } from "../../constant/lists";
-import Header from "../../component/Header"
+import Header from "../../component/header"
 import { Skeleton } from "../../component/loader/skeleton";
 
 const Students = () => {
