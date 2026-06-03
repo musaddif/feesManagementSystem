@@ -150,7 +150,7 @@ export const withdrawCashThunk = createAsyncThunk(
     try {
       dispatch(setLoading(true));
       const { error } = await supabase.from("amount_transactions").insert({
-        title: "" + description,
+        title: "[WITHDRAW_CASH] " + description,
         type: "expense",
         amount: amount,
         payment_method: "Cash",

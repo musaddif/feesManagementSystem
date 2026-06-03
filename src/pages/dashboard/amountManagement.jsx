@@ -170,7 +170,7 @@ const AmountManagement = () => {
                     className="input-field"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Student Fees, Office Rent"
+                    placeholder="e.g.Fees,  Rent"
                     required
                   />
                 </div>
@@ -329,7 +329,7 @@ const AmountManagement = () => {
                   transactions.map((t) => (
                     <tr key={t.id}>
                       <td>{new Date(t.created_at).toLocaleDateString()}</td>
-                      <td>{t.title}</td>
+                      <td>{t.title.replace(/^\[(WITHDRAW_CASH|EXPENSE)\]\s*/, "")}</td>
                       <td className={t.type === "income" ? "type-income" : "type-expense"}>
                         {t.type.toUpperCase()}
                       </td>
