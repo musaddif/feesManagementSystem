@@ -51,7 +51,7 @@ const Setting = () => {
 
   const bsDepartments = [
     "Computer Science", "Chemistry", "Botany", "Physics", "Zoology",
-    "Urdu", "Political Science", "Maths", "Economics", "Statistic",
+    "Urdu", "Political Science", "Mathematics", "Economics", "Statistic",
     "English", "Geography"
   ];
 

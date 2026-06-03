@@ -37,7 +37,7 @@ function ExcelFileReader() {
         "Batch",
         "Registration No",
         "Department",
-        "RollNo",
+
       ];
 
       const filteredData = parseData.map((row) => {
@@ -93,7 +93,7 @@ function ExcelFileReader() {
   };
 
   const downloadTemplate = () => {
-    const headers = ["Name", "Father Name", "Batch", "Registration No", "Department", "RollNo"];
+    const headers = ["Registration No", "Name", "Father Name", "Batch", "Department"];
     const ws = XLSX.utils.aoa_to_sheet([headers]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Template");

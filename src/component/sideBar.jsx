@@ -15,7 +15,7 @@ import { auth_logout } from "../store/Thunk/authThunk";
 import { useSidebar } from "../context/SidebarContext";
 
 const NAV_LINKS = [
-  { to: "/students", icon: <FaClipboardList size={20} />, label: "Students" },
+  { to: "/students", icon: <FaClipboardList size={20} />, label: "Fee Statistics" },
   { to: "/excelReader", icon: <FaUserPlus size={20} />, label: "Add Students" },
   { to: "/feeSubmission", icon: <FaMoneyBillWave size={20} />, label: "Fee Form" },
   { to: "/studentList", icon: <FaListUl size={20} />, label: "Report" },

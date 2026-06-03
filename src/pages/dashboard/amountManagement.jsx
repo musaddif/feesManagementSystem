@@ -261,7 +261,7 @@ const AmountManagement = () => {
           <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 mb-8">
             <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
               <span className="p-2 bg-red-100 text-red-600 rounded-lg">💸</span>
-              Deposit Cash to University Account
+              Deposit Cash to University/Board Account
             </h2>
             <form onSubmit={handleExpenseSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 items-end">
               <div className="flex flex-col gap-2">

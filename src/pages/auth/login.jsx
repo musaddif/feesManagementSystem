@@ -20,14 +20,38 @@ const Login = () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
   const handleLogin = async () => {
-    setLoading(true);
+    // Reset messages
     setMessage("");
+
+    // Validation checks
+    if (!email.trim()) {
+      setMessage("Email is required");
+      return;
+    }
+
+    if (!password.trim()) {
+      setMessage("Password is required");
+      return;
+    }
+
+    // Email regex pattern for validation
+    const emailRegex = /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/;
+    if (!emailRegex.test(email)) {
+      setMessage("Please enter a valid email address");
+      return;
+    }
+
+    // Password validation (minimum 6 characters)
+    if (password.length < 6) {
+      setMessage("Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const resultAction = await dispatch(login({ email, password }));
-
       if (login.fulfilled.match(resultAction)) {
         setMessage("Login successful!");
         // navigate("/dashboard");

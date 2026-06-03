@@ -287,12 +287,12 @@ const StudentList = () => {
       if (!submission) return grandTotal;
 
       const ft = submission.fee_type || {};
-      
+
       // Find matching fee structure for this student
-      const deptName = isBS 
-        ? s.department?.department_name 
+      const deptName = isBS
+        ? s.department?.department_name
         : s?.inter?.class_name;
-      
+
       const feeStructure = allFeesData.find(f => {
         if (isBS) {
           return f.department_name === deptName && f.semester === submission.semester;
@@ -304,8 +304,8 @@ const StudentList = () => {
       if (!feeStructure) return grandTotal;
 
       let studentPaidSum = 0;
-      const selectedTypes = selectedFeeTypes.includes("All") 
-        ? FEE_COLUMNS.map(c => c.label) 
+      const selectedTypes = selectedFeeTypes.includes("All")
+        ? FEE_COLUMNS.map(c => c.label)
         : selectedFeeTypes;
 
       selectedTypes.forEach(typeLabel => {
@@ -542,7 +542,7 @@ const StudentList = () => {
                 <thead>
                   <tr>
                     <th>Student Info</th>
-                    <th>Roll No</th>
+                    <th>Registration No</th>
                     {(selectedFeeTypes.includes("All") ? FEE_COLUMNS : FEE_COLUMNS.filter(c => selectedFeeTypes.includes(c.label))).map(col => (
                       <th key={col.field}>{col.shortLabel}</th>
                     ))}
