@@ -5,6 +5,8 @@ import { supabase } from "../../supabaseClient";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../component/button/button";
+import { useDispatch, useSelector } from "react-redux";
+import { login } from "../../store/Thunk/authThunk";
 
 const Login = () => {
   const [username, setUserName] = useState("");
@@ -12,36 +14,51 @@ const Login = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] = useState("");
 
   const navigate = useNavigate();
-
+  const dispatch = useDispatch();
   const handleLogin = async () => {
-    setLoading(true);
+    // Reset messages
     setMessage("");
 
+    // Validation checks
+    if (!email.trim()) {
+      setMessage("Email is required");
+      return;
+    }
+
+    if (!password.trim()) {
+      setMessage("Password is required");
+      return;
+    }
+
+    // Email regex pattern for validation
+    const emailRegex = /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/;
+    if (!emailRegex.test(email)) {
+      setMessage("Please enter a valid email address");
+      return;
+    }
+
+    // Password validation (minimum 6 characters)
+    if (password.length < 6) {
+      setMessage("Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        setMessage("Login failed: " + error.message);
-        return;
+      const resultAction = await dispatch(login({ email, password }));
+      if (login.fulfilled.match(resultAction)) {
+        setMessage("Login successful!");
+        // navigate("/dashboard");
+        navigate("/students");
+      } else if (login.rejected.match(resultAction)) {
+        setMessage("Login failed: " + resultAction.payload);
       }
-
-      setMessage("Login successful!");
-      navigate("/dashboard");
-
-      // Optional: Fetch user profile from your custom `user` table
-      // const { data: userProfile } = await supabase
-      //   .from("user")
-      //   .select("*")
-      //   .eq("user_id", data.user.id)
-      //   .single();
-
-      // console.log("User profile:", userProfile);
     } catch (err) {
       setMessage("Unexpected error: " + err.message);
     } finally {
@@ -58,6 +75,11 @@ const Login = () => {
   //     const { data, error } = await supabase.auth.signUp({
   //       email,
   //       password,
+  //       options: {
+  //         data: {
+  //           role: role ? role : "",
+  //         },
+  //       },
   //     });
 
   //     if (error) {
@@ -118,13 +140,26 @@ const Login = () => {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
+
+          {/* <label>
+            <input
+              type="checkbox"
+              className="mr-2 mb-4"
+              value={role}
+              name="role"
+              onChange={(e) => setRole(e.target.checked ? "Admin" : "")}
+            />
+            login as Admin
+          </label> */}
         </div>
 
-        {/* <button className="loginbtn" onClick={handleLogin} disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button> */}
-        <Button className="" onClick={handleLogin} disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
+        <Button
+          className=""
+          onClick={handleLogin}
+          loading={loading}
+          loadingText="Logging in..."
+        >
+          Login
         </Button>
 
         {/* <button onClick={handleSignUp}>signUp</button> */}
