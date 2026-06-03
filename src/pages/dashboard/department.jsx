@@ -5,9 +5,9 @@ import Button from "../../component/button/button";
 import { departmentList } from "../../constant/lists";
 import { intermediateList } from "../../constant/lists";
 import { useEffect, useState } from "react";
-import { supabase } from "../../supabaseClient";
 import { useDispatch, useSelector } from "react-redux";
-import { allDepartments } from "../../store/Thunk/commonThunk";
+import { allDepartments, getFScdeprt } from "../../store/Thunk/commonThunk";
+import { Skeleton } from "../../component/loader/skeleton";
 
 const Department = () => {
   const location = useLocation();
@@ -15,34 +15,43 @@ const Department = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const allDepartment = useSelector((state) => state.common.department);
-  // console.log("allDepartment = ", allDepartment);
+  const FScDepartment = useSelector((state) => state.common.interDepartments);
+  const globalLoading = useSelector((state) => state.common.loading);
+  // console.log("FScDepartment = ", FScDepartment);
 
   const handleNavigation = (type) => {
     // Navigate to the fee submission form with the selected department type
-    navigate("/feeSubmission", { state: { selectedDepartment: type } });
+    localStorage.setItem("selectedDepartment", JSON.stringify(type));
+    navigate("/students");
   };
 
   useEffect(() => {
     dispatch(allDepartments());
+    dispatch(getFScdeprt());
   }, []);
 
   return (
-    <div className="backgroundStyle">
+    <div className="backgroundStyle !h-full sm:!h-screen md:!h-screen lg:!h-screen ">
       {selectedType == "BS" ? (
         <div className="container">
           <h1 className="text-2xl font-bold">Department</h1>
-          {/* BS  Department Buttons */}
           <div className="flex flex-wrap flex-row gap-4 justify-center">
             {/* {departmentList.map((dept, index) => ( */}
-            {allDepartment?.map((dept, index) => (
-              <Button
-                key={index}
-                onClick={() => handleNavigation(dept)}
-                className=""
-              >
-                {dept?.department_name}
-              </Button>
-            ))}
+            {globalLoading && allDepartment?.length === 0 ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-48" />
+              ))
+            ) : (
+              allDepartment?.map((dept, index) => (
+                <Button
+                  key={index}
+                  onClick={() => handleNavigation(dept)}
+                  className=""
+                >
+                  {dept?.department_name}
+                </Button>
+              ))
+            )}
           </div>
         </div>
       ) : (
@@ -50,15 +59,21 @@ const Department = () => {
         <div className="container">
           <h1 className="text-2xl font-bold">Intermediate</h1>
           <div className="flex flex-wrap flex-row gap-4 justify-center">
-            {intermediateList.map((inter, index) => (
-              <Button
-                key={index}
-                onClick={() => handleNavigation(inter)}
-                className=""
-              >
-                {inter}
-              </Button>
-            ))}
+            {globalLoading && FScDepartment?.length === 0 ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-48" />
+              ))
+            ) : (
+              FScDepartment.map((inter, index) => (
+                <Button
+                  key={index}
+                  onClick={() => handleNavigation(inter)}
+                  className=""
+                >
+                  {inter?.class_name}
+                </Button>
+              ))
+            )}
           </div>
         </div>
       )}

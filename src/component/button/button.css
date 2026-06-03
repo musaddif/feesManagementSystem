@@ -1,5 +1,7 @@
 .Buttons {
-  @apply text-white font-semibold py-3 px-16 rounded-xl shadow-md bg-[#b8860b];
+  @apply text-white py-3 px-8 font-semibold rounded-xl shadow-md bg-[#b8860b];
+  min-height: 44px;
+  touch-action: manipulation;
 }
 .Buttons:hover {
   @apply bg-[#291e05] hover:shadow-lg transition-all duration-300;

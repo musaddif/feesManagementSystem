@@ -1,0 +1,147 @@
+.amount-management-container {
+    padding: 1.5rem;
+}
+
+.balance-card {
+    background: linear-gradient(135deg, #b8860b 0%, #291e05 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.balance-amount {
+    font-size: 3rem;
+    font-bold: 700;
+}
+
+.tabs-container {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #e5e7eb;
+    flex-wrap: wrap;
+}
+
+.tab-button {
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.tab-button.active {
+    color: #b8860b;
+    border-bottom: 3px solid #b8860b;
+}
+
+.form-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.input-group {
+    margin-bottom: 1.5rem;
+}
+
+.input-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.input-field {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    outline: none;
+}
+
+.input-field:focus {
+    border-color: #b8860b;
+    box-shadow: 0 0 0 2px rgba(184, 134, 11, 0.2);
+}
+
+.radio-group {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.transaction-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.transaction-table th, .transaction-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.transaction-table th {
+    background: #f9fafb;
+    font-weight: 600;
+}
+
+.type-income {
+    color: #059669;
+    font-weight: 600;
+}
+
+.type-expense {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+/* ── Mobile Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .amount-management-container {
+        padding: 1rem;
+    }
+
+    .balance-amount {
+        font-size: 2rem;
+    }
+
+    .balance-card {
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .tab-button {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .form-container {
+        padding: 1rem;
+    }
+
+    /* Transaction table: horizontal scroll */
+    .transaction-table th,
+    .transaction-table td {
+        padding: 0.625rem 0.75rem;
+        font-size: 0.8125rem;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .balance-amount {
+        font-size: 1.625rem;
+    }
+}
