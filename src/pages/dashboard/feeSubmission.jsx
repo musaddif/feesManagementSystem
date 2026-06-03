@@ -459,7 +459,7 @@ const FeeSubmission = () => {
                             />
                           </th>
                           <th className="p-4 border-b font-semibold text-gray-700">Name</th>
-                          <th className="p-4 border-b font-semibold text-gray-700">Roll No</th>
+                          {/* <th className="p-4 border-b font-semibold text-gray-700">Roll No</th> */}
                           <th className="p-4 border-b font-semibold text-gray-700">Registration No</th>
                           <th className="p-4 border-b font-semibold text-gray-700">Batch</th>
                         </tr>
@@ -479,7 +479,7 @@ const FeeSubmission = () => {
                                   />
                                 </td>
                                 <td className="p-4 text-gray-800 font-medium">{student.name}</td>
-                                <td className="p-4 text-gray-600">{student.rollno}</td>
+                                {/* <td className="p-4 text-gray-600">{student.rollno}</td> */}
                                 <td className="p-4 text-gray-600">{reg}</td>
                                 <td className="p-4 text-gray-600">{student.batch}</td>
                               </tr>
