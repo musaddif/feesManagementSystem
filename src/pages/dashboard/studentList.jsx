@@ -6,12 +6,13 @@ import {
   allDepartments,
   getFScdeprt,
   getAllFeesData,
+  editFeeRecord,
 } from "../../store/Thunk/commonThunk";
 import { getstudentList, getInterStudentList } from "../../store/slices/commonSlices";
 import SideBar from "../../component/sideBar";
 import "../../constant/applicationStyle.css";
 import "../style/studentList.css";
-import { FaSearch, FaDownload } from "react-icons/fa";
+import { FaSearch, FaDownload, FaPencilAlt } from "react-icons/fa";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import Button from "../../component/button/button";
@@ -61,6 +62,14 @@ const StudentList = () => {
   const [selectedFeeTypes, setSelectedFeeTypes] = useState(["All"]);
   const [isSearch, setIsSearch] = useState("");
 
+  // ── Edit modal state ──────────────────────────────────────────────────────
+  const [editModal, setEditModal] = useState(null); // { student, submission, feeStructure }
+  const [editFeeType, setEditFeeType] = useState({});
+  const [editRepeatCount, setEditRepeatCount] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [editSuccess, setEditSuccess] = useState("");
+
   // ── Local data state ──────────────────────────────────────────────────────
   const [students, setStudents] = useState([]);
   const [originalData, setOriginalData] = useState([]);
@@ -91,6 +100,108 @@ const StudentList = () => {
   }, [isBS, studyLevel, bsDepartments, interDepts]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
+
+  /** Open edit modal for a student row */
+  const openEditModal = async (student) => {
+    const target = isBS ? currentSemester : interClass;
+    const submission = target
+      ? student?.feeSubmission?.find((fs) => fs.semester === target)
+      : student?.feeSubmission?.[0];
+
+    if (!submission) {
+      alert("No fee submission found for this student in the selected semester/class.");
+      return;
+    }
+
+    if (!submission.id) {
+      alert("Error: Fee submission record is missing a valid ID database key. Cannot edit.");
+      console.error("Missing ID on submission object:", submission);
+      return;
+    }
+
+    // Find fee structure for this student/semester
+    const deptName = isBS
+      ? student.department?.department_name
+      : student?.inter?.class_name;
+
+    const feeStructure = allFeesData.find(f => {
+      if (isBS) return f.department_name === deptName && f.semester === submission.semester;
+      return f.inter_class === submission.semester;
+    });
+
+    const ft = typeof submission.fee_type === "string"
+      ? JSON.parse(submission.fee_type)
+      : (submission.fee_type || {});
+
+    setEditFeeType({ ...ft });
+    setEditRepeatCount(submission.repeat_paper_count || "");
+    setEditError("");
+    setEditSuccess("");
+    setEditModal({ student, submission, feeStructure: feeStructure || {} });
+  };
+
+  const closeEditModal = () => {
+    setEditModal(null);
+    setEditError("");
+    setEditSuccess("");
+  };
+
+  const handleEditFeeToggle = (field) => {
+    setEditFeeType(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const handleEditSave = async () => {
+    setEditError("");
+    setEditSaving(true);
+
+    // Build the final fee_type object to send
+    const finalFeeType = { ...editFeeType };
+    if (finalFeeType.repeat_paper_fee) {
+      const count = parseInt(editRepeatCount);
+      if (!count || count <= 0) {
+        setEditError("Please enter a valid repeat paper count.");
+        setEditSaving(false);
+        return;
+      }
+      // Store count as a number in fee_type for the thunk to compute cost
+      finalFeeType.repeat_paper_fee = count;
+    }
+
+    if (!editModal?.submission?.id) {
+      setEditError("Internal Error: Missing fee submission record ID.");
+      setEditSaving(false);
+      console.error("Missing submission ID in editModal:", editModal);
+      return;
+    }
+
+    try {
+      const result = await dispatch(
+        editFeeRecord({
+          submissionId: editModal.submission.id,
+          newFeeType: finalFeeType,
+          feeStructure: editModal.feeStructure,
+        })
+      ).unwrap();
+
+      setEditSuccess(result.message || "Saved successfully!");
+
+      // Refresh the student list to reflect changes in the table
+      const deprtKey = isBS
+        ? selectedDept?.department_name || null
+        : selectedDept?.id ?? selectedDept?.class_name ?? null;
+      if (isBS) {
+        dispatch(getAllStudents({ deprt: deprtKey, batchValue, currentSemester }));
+      } else {
+        dispatch(getAllInterStudents({ deprt: deprtKey, batchValue, interClass }));
+      }
+
+      setTimeout(() => closeEditModal(), 1500);
+    } catch (err) {
+      setEditError(typeof err === "string" ? err : "Failed to update. Please try again.");
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   /** Department change — when switching to "All Depts" keep semester/batch; when switching to a new specific dept reset them */
   const handleDeptChange = (e) => {
@@ -547,6 +658,7 @@ const StudentList = () => {
                       <th key={col.field}>{col.shortLabel}</th>
                     ))}
                     <th>Status</th>
+                    <th>Edit</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -591,6 +703,25 @@ const StudentList = () => {
                             <span className={`status-badge ${status.className}`}>
                               {status.text}
                             </span>
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            <button
+                              title="Edit fee record"
+                              onClick={() => openEditModal(s)}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                color: "#b8860b",
+                                padding: "4px 8px",
+                                borderRadius: "6px",
+                                transition: "background 0.15s",
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = "#fef9e7"}
+                              onMouseLeave={e => e.currentTarget.style.background = "none"}
+                            >
+                              <FaPencilAlt size={14} />
+                            </button>
                           </td>
                         </tr>
                       );
@@ -642,6 +773,134 @@ const StudentList = () => {
 
         </main>
       </div>
+
+      {/* ── Edit Fee Record Modal ───────────────────────────────────────── */}
+      {editModal && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "1rem",
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeEditModal(); }}
+        >
+          <div
+            style={{
+              background: "#fff", borderRadius: "12px",
+              padding: "2rem", maxWidth: "520px", width: "100%",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+              maxHeight: "90vh", overflowY: "auto",
+            }}
+          >
+            <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.25rem", color: "#1e293b" }}>
+              Edit Fee Record
+            </h2>
+            <p style={{ fontSize: "0.875rem", color: "#64748b", marginBottom: "1.25rem" }}>
+              <strong>{editModal.student.name}</strong> — {editModal.submission.semester}
+            </p>
+
+            {/* Fee type checkboxes */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem", marginBottom: "1.25rem" }}>
+              {FEE_COLUMNS.map(col => {
+                // Skip id_card_fee for even BS semesters
+                if (col.field === "id_card_fee" && isBS &&
+                  ["2nd", "4th", "6th", "8th", "10th"].includes(editModal.submission.semester)) {
+                  return null;
+                }
+                const feeAmt = col.field === "repeat_paper_fee"
+                  ? (Number(editModal.feeStructure?.[col.field]) || 0) * (parseInt(editRepeatCount) || 1)
+                  : (Number(editModal.feeStructure?.[col.field]) || 0);
+                return (
+                  <label
+                    key={col.field}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "0.75rem",
+                      padding: "0.625rem 0.875rem",
+                      borderRadius: "8px",
+                      background: editFeeType[col.field] ? "#fef9e7" : "#f8fafc",
+                      border: `1px solid ${editFeeType[col.field] ? "#b8860b" : "#e2e8f0"}`,
+                      cursor: "pointer", transition: "all 0.15s",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={!!editFeeType[col.field]}
+                      onChange={() => handleEditFeeToggle(col.field)}
+                      style={{ width: 16, height: 16, cursor: "pointer" }}
+                    />
+                    <span style={{ flex: 1, fontWeight: 500, color: "#1e293b" }}>{col.label}</span>
+                    <span style={{ fontSize: "0.8125rem", color: "#64748b" }}>
+                      {feeAmt > 0 ? `Rs. ${feeAmt.toLocaleString()}` : "—"}
+                    </span>
+                  </label>
+                );
+              })}
+
+              {/* Repeat paper count input */}
+              {editFeeType.repeat_paper_fee && (
+                <div style={{ paddingLeft: "2.25rem" }}>
+                  <label style={{ fontSize: "0.8125rem", color: "#64748b", display: "block", marginBottom: "0.25rem" }}>
+                    Number of Repeat Papers
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editRepeatCount}
+                    onChange={e => setEditRepeatCount(e.target.value)}
+                    style={{
+                      border: "1px solid #e2e8f0", borderRadius: "6px",
+                      padding: "0.375rem 0.625rem", width: "100px",
+                      fontSize: "0.875rem",
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Messages */}
+            {editError && (
+              <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: "8px", padding: "0.625rem 0.875rem", color: "#dc2626", fontSize: "0.875rem", marginBottom: "1rem" }}>
+                {editError}
+              </div>
+            )}
+            {editSuccess && (
+              <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "8px", padding: "0.625rem 0.875rem", color: "#16a34a", fontSize: "0.875rem", marginBottom: "1rem" }}>
+                {editSuccess}
+              </div>
+            )}
+
+            {/* Buttons */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
+              <button
+                onClick={closeEditModal}
+                disabled={editSaving}
+                style={{
+                  padding: "0.5rem 1.25rem", borderRadius: "8px",
+                  border: "1px solid #e2e8f0", background: "#f8fafc",
+                  color: "#64748b", fontWeight: 600, cursor: "pointer",
+                  fontSize: "0.875rem",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEditSave}
+                disabled={editSaving}
+                style={{
+                  padding: "0.5rem 1.25rem", borderRadius: "8px",
+                  border: "none", background: editSaving ? "#d4a017" : "#b8860b",
+                  color: "#fff", fontWeight: 700, cursor: editSaving ? "not-allowed" : "pointer",
+                  fontSize: "0.875rem", minWidth: "80px",
+                  transition: "background 0.15s",
+                }}
+              >
+                {editSaving ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

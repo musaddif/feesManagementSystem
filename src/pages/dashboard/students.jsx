@@ -17,7 +17,8 @@ import Header from "../../component/header";
 const Students = () => {
   const [studentSemester, setStudentSemester] = useState("All");
   const [openBatch, setOpenBatch] = useState(null);
-  const [submittedFeesCount, setSubmittedFeesCount] = useState([]);
+  const [submittedFeesCount, setSubmittedFeesCount] = useState(0);
+  const [pendingFeesCount, setPendingFeesCount] = useState(0);
   const [pendingFeeTypeCounts, setPendingFeeTypeCounts] = useState({});
   const [feeTypeCounts, setFeeTypeCounts] = useState({});
   const [students, setStudents] = useState([]);
@@ -80,30 +81,36 @@ const Students = () => {
       return;
     }
 
-    let filtered = studentRecord;
+    const getBaseDepartment = (className) => {
+      if (!className) return "";
+      const suffixes = [" First Year", " Second Year", " I", " II"];
+      for (let suffix of suffixes) {
+        if (className.endsWith(suffix)) {
+          return className.slice(0, -suffix.length).trim();
+        }
+      }
+      return className;
+    };
 
-    if (selectedDeprt?.study_level === "BS") {
-      if (studentSemester !== "All") {
-        filtered = filtered.filter((student) =>
-          student?.feeSubmission
-            ?.map((fs) => fs.semester)
-            .includes(studentSemester),
-        );
-      }
-    } else {
-      if (interClass !== "") {
-        filtered = filtered.filter((student) =>
-          student?.feeSubmission?.some((fs) => fs.semester === interClass),
-        );
-      }
+    let filtered = studentRecord;
+    const isBS = selectedDeprt?.study_level === "BS";
+
+    if (!isBS && deptFilter) {
+      const baseDept = getBaseDepartment(deptFilter);
+      filtered = filtered.filter(student => {
+        // Use joined inter.class_name string, as student.department is an ID integer in the database
+        const studentBase = getBaseDepartment(student.inter?.class_name || "");
+        return studentBase === baseDept;
+      });
     }
 
     setStudents(filtered);
-  }, [studentRecord, studentSemester, interClass, selectedDeprt]);
+  }, [studentRecord, deptFilter, selectedDeprt]);
 
   useEffect(() => {
     if (!openBatch) {
       setSubmittedFeesCount(0);
+      setPendingFeesCount(0);
       setFeeTypeCounts({});
       setPendingFeeTypeCounts({});
       return;
@@ -114,11 +121,23 @@ const Students = () => {
     );
 
     const isBS = selectedDeprt?.study_level === "BS";
-    const targetSem = isBS ? studentSemester : interClass;
+    const targetSem = isBS ? studentSemester : deptFilter;
 
     let submittedStudentCount = 0;
+    let targetClassStudentCount = 0;
     const feeCounts = {};
+
     studentsInBatch.forEach((student) => {
+      // Use joined inter.class_name string, as student.department is an ID integer in the database
+      const studentClass = isBS
+        ? (student.department?.department_name || "")
+        : (student.inter?.class_name || "");
+      const isTargetClass = isBS ? true : (!targetSem || targetSem === "All" || targetSem === "" || studentClass === targetSem);
+
+      if (isTargetClass) {
+        targetClassStudentCount += 1;
+      }
+
       if (student?.feeSubmission && student.feeSubmission.length > 0) {
         const submission = (targetSem && targetSem !== "All" && targetSem !== "")
           ? student.feeSubmission.find((fs) => fs.semester === targetSem)
@@ -136,7 +155,7 @@ const Students = () => {
               ? ["2nd", "4th", "6th", "8th", "10th"].includes(submission.semester) || ft.id_card_fee
               : ft.id_card_fee);
 
-          if (isPaidAll) {
+          if (isPaidAll && isTargetClass) {
             submittedStudentCount += 1;
           }
         }
@@ -145,13 +164,15 @@ const Students = () => {
           if (targetSem && targetSem !== "All" && targetSem !== "" && sub.semester !== targetSem) return;
           if (!sub?.fee_type) return;
 
-          Object.entries(sub?.fee_type).forEach(
-            ([feeType, isSubmitted]) => {
-              if (isSubmitted) {
-                feeCounts[feeType] = (feeCounts[feeType] || 0) + 1;
-              }
-            },
-          );
+          if (isTargetClass) {
+            Object.entries(sub?.fee_type).forEach(
+              ([feeType, isSubmitted]) => {
+                if (isSubmitted) {
+                  feeCounts[feeType] = (feeCounts[feeType] || 0) + 1;
+                }
+              },
+            );
+          }
         });
       }
     });
@@ -167,13 +188,14 @@ const Students = () => {
     ];
 
     allFeeTypes.forEach((type) => {
-      pendingCounts[type] = studentsInBatch.length - (feeCounts[type] || 0);
+      pendingCounts[type] = targetClassStudentCount - (feeCounts[type] || 0);
     });
 
     setSubmittedFeesCount(submittedStudentCount);
+    setPendingFeesCount(targetClassStudentCount - submittedStudentCount);
     setFeeTypeCounts(feeCounts);
     setPendingFeeTypeCounts(pendingCounts);
-  }, [students, openBatch, studentSemester, interClass, selectedDeprt]);
+  }, [students, openBatch, studentSemester, interClass, selectedDeprt, deptFilter]);
   useEffect(() => {
     if (!selectedDeprt) return;
 
@@ -181,20 +203,20 @@ const Students = () => {
       dispatch(
         getAllStudents({
           deprt: deptFilter,
-          batchValue: openBatch,
+          batchValue: "",
           currentSemester: studentSemester === "All" ? "" : studentSemester,
         }),
       );
     } else {
       dispatch(
         getInterClassStudents({
-          deprt: deptFilter,
-          batchValue: openBatch,
+          deprt: "", // Fetch all classes to calculate base department totals locally
+          batchValue: "",
           interClass: interClass,
         }),
       );
     }
-  }, [openBatch, studentSemester, interClass, deptFilter]);
+  }, [studentSemester, interClass, deptFilter, selectedDeprt]);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -325,7 +347,7 @@ const Students = () => {
                                         {submittedFeesCount}
                                       </td>
                                       <td className="border border-gray-400 px-3 py-2 text-center text-red-700">
-                                        {studentsInBatch.length - submittedFeesCount}
+                                        {pendingFeesCount}
                                       </td>
                                     </tr>
                                   </tbody>

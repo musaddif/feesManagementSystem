@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { useState } from "react";
 import Login from "../pages/auth/login";
-import Dashboard from "../pages/dashboard/dashboard";
+// import Dashboard from "../pages/dashboard/dashboard";
 import Department from "../pages/dashboard/department";
 import FeeSubmission from "../pages/dashboard/feeSubmission";
 import NotFound from "../pages/auth/notFound";
@@ -20,14 +20,14 @@ const Layout = () => {
       <Route path="/" element={
         <Login />
       } />
-      <Route
+      {/* <Route
         path="/dashboard"
         element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
         }
-      />
+      /> */}
       <Route
         path="/department"
         element={

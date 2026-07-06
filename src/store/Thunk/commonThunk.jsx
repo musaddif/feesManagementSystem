@@ -539,7 +539,7 @@ export const getAllStudents = createAsyncThunk(
            created_at,
            rollno,
            department (department_name),
-           feeSubmission (registration_number, fee_type, amount, semester)`,
+           feeSubmission (id, registration_number, fee_type, amount, semester)`,
       );
 
       // 🔹 Optional filters
@@ -752,6 +752,68 @@ export const getAllInterStudents = createAsyncThunk(
       dispatch(setLoading(false));
     }
   },
+);
+
+export const editFeeRecord = createAsyncThunk(
+  "editFeeRecord",
+  async (
+    { submissionId, newFeeType, feeStructure },
+    { dispatch, rejectWithValue }
+  ) => {
+    try {
+      // Recalculate amounts from scratch based on the new fee_type selections
+      // and the fee structure (amounts per fee type from the fees table)
+      const ELIGIBLE_KEYS = ["admission_fee", "college_fee", "id_card_fee"];
+      const CASH_KEYS = ["exam_fee", "CRF", "crf", "registration_fee"];
+
+      let newAmount = 0;
+      let newPostedAmount = 0;    // eligible (posted_amount)
+      let newCashInHand = 0;      // cash in hand (posted_cash_amount)
+      let newRepeatPaperCount = 0;
+
+      Object.entries(newFeeType).forEach(([key, value]) => {
+        if (!value) return; // skip unchecked / false
+
+        if (key === "repeat_paper_fee") {
+          const count = typeof value === "number" ? value : 1;
+          const perPaperAmt = Number(feeStructure?.[key]) || 0;
+          const total = perPaperAmt * count;
+          newAmount += total;
+          newRepeatPaperCount = count;
+          // repeat paper fee goes to cash in hand bucket
+          newCashInHand += total;
+          return;
+        }
+
+        const amt = Number(feeStructure?.[key]) || 0;
+        newAmount += amt;
+        if (ELIGIBLE_KEYS.includes(key)) newPostedAmount += amt;
+        if (CASH_KEYS.includes(key)) newCashInHand += amt;
+      });
+
+      const { error } = await supabase
+        .from("feeSubmission")
+        .update({
+          fee_type: newFeeType,
+          amount: newAmount,
+          posted_amount: newPostedAmount,
+          posted_cash_amount: newCashInHand,
+          repeat_paper_count: newRepeatPaperCount,
+        })
+        .eq("id", submissionId);
+
+      if (error) throw error;
+
+      // Refresh global finance totals
+      dispatch(fetchTotalAmount());
+      dispatch(fetchTransactions());
+
+      return { success: true, message: "Fee record updated successfully." };
+    } catch (err) {
+      console.error("editFeeRecord error:", err);
+      return rejectWithValue(err.message || "Failed to update fee record.");
+    }
+  }
 );
 
 export const getFeeSetting = createAsyncThunk(
