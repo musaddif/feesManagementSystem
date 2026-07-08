@@ -9,7 +9,7 @@ import ExcelFileReader from "../pages/dashboard/excelFileReader";
 import StudentList from "../pages/dashboard/studentList";
 import ProtectedRoute from "./ProtectedRoute";
 import Setting from "../pages/admin/Setting";
-import Report from "../pages/dashboard/report";
+// import Report from "../pages/dashboard/report";
 import Students from "../pages/dashboard/students";
 import AmountManagement from "../pages/dashboard/amountManagement";
 
@@ -68,14 +68,14 @@ const Layout = () => {
           </ProtectedRoute>
         }
       />
-      <Route
+      {/* <Route
         path="/report"
         element={
           <ProtectedRoute>
             <Report />
           </ProtectedRoute>
         }
-      />
+      /> */}
       <Route
         path="/students"
         element={

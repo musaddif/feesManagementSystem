@@ -42,6 +42,7 @@ const Students = () => {
   const bsDepartments = useSelector((state) => state.common.department);
   const interDepartments = useSelector((state) => state.common.interDepartments);
 
+
   useEffect(() => {
     dispatch(allDepartments());
     dispatch(getFScdeprt());
@@ -81,26 +82,12 @@ const Students = () => {
       return;
     }
 
-    const getBaseDepartment = (className) => {
-      if (!className) return "";
-      const suffixes = [" First Year", " Second Year", " I", " II"];
-      for (let suffix of suffixes) {
-        if (className.endsWith(suffix)) {
-          return className.slice(0, -suffix.length).trim();
-        }
-      }
-      return className;
-    };
-
     let filtered = studentRecord;
     const isBS = selectedDeprt?.study_level === "BS";
 
     if (!isBS && deptFilter) {
-      const baseDept = getBaseDepartment(deptFilter);
       filtered = filtered.filter(student => {
-        // Use joined inter.class_name string, as student.department is an ID integer in the database
-        const studentBase = getBaseDepartment(student.inter?.class_name || "");
-        return studentBase === baseDept;
+        return (student.inter?.class_name || "") === deptFilter;
       });
     }
 

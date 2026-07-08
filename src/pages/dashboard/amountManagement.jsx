@@ -93,7 +93,7 @@ const AmountManagement = () => {
     try {
       if (activeTab === "add-money") {
         await dispatch(addMoneyThunk(payload)).unwrap();
-        alert("Money added successfully!");
+        alert("Payment added successfully!");
       } else {
         if (parseFloat(amount) > totalAmount) {
           alert("Insufficient balance!");
