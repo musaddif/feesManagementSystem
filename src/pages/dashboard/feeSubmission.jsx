@@ -60,10 +60,9 @@ const FeeSubmission = () => {
         dispatch(getAllStudents({ deprt: selectedDeprt.department_name }));
       }
     } else {
+      dispatch(getAllInterStudents({}));
       if (selectedDeprt?.class_name) {
-        // Fallback or initial fetch
-        const initialClass = selectedDeprt.class_name;
-        dispatch(getAllInterStudents({ deprt: initialClass }));
+        setInterClass(selectedDeprt.class_name);
       }
     }
   }, []);
@@ -108,7 +107,10 @@ const FeeSubmission = () => {
     const result = getstudentList.filter((studentData) => {
       const studentBatch = (studentData.batch || "").toLowerCase().trim();
       const matchBatch = batchValue ? studentBatch.includes(batchValue.toLowerCase().trim()) : true;
-      return matchBatch;
+      const matchClass = isInter && interClass
+        ? (studentData.inter?.class_name || "") === interClass
+        : true;
+      return matchBatch && matchClass;
     });
 
     setStudentList(result);
@@ -116,11 +118,11 @@ const FeeSubmission = () => {
     setSelectedStudents((prev) => prev.filter(s =>
       result.some(r => (isInter ? r.inter_student_registration === s.inter_student_registration : r.registration_number === s.registration_number))
     ));
-  }, [batchValue, getstudentList, isInter]);
+  }, [batchValue, interClass, getstudentList, isInter]);
 
   useEffect(() => {
     filterStudents();
-  }, [batchValue, filterStudents]);
+  }, [batchValue, interClass, filterStudents]);
 
   // Recalculate amounts
   useEffect(() => {
